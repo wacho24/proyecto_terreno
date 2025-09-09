@@ -1,0 +1,66 @@
+[LOGIN][FAIL] Correo no encontrado en AdmisGenerales.
+[LOGIN][QueryError] Index not defined, add ".indexOn": "Email", for path "/projects/proj_8HNCM2DFob/data/AdmisGenerales", to the rules
+[LOGIN][QueryError] Index not defined, add ".indexOn": "Email", for path "/projects/proj_8HNCM2DFob/data/AdmisGenerales", to the rules
+[LOGIN][QueryError] Index not defined, add ".indexOn": "Email", for path "/projects/proj_8HNCM2DFob/data/AdmisGenerales", to the rules
+[LOGIN][QueryError] Index not defined, add ".indexOn": "Email", for path "/projects/proj_8HNCM2DFob/data/AdmisGenerales", to the rules
+[LOGIN][QueryError] Index not defined, add ".indexOn": "Email", for path "/projects/proj_8HNCM2DFob/data/AdmisGenerales", to the rules
+[LOGIN][QueryError] Index not defined, add ".indexOn": "Email", for path "/projects/proj_8HNCM2DFob/data/AdmisGenerales", to the rules
+[LOGIN][QueryError] Index not defined, add ".indexOn": "Email", for path "/projects/proj_8HNCM2DFob/data/AdmisGenerales", to the rules
+[LOGIN][FAIL] Completa email y contraseña.
+[LOGIN][FAIL] Completa email y contraseña.
+[LOGIN][QueryError] Index not defined, add ".indexOn": "Email", for path "/projects/proj_8HNCM2DFob/data/AdmisGenerales", to the rules
+[LOGIN][QueryError] Index not defined, add ".indexOn": "Email", for path "/projects/proj_8HNCM2DFob/data/AdmisGenerales", to the rules
+[LOGIN][QueryError] Index not defined, add ".indexOn": "Email", for path "/projects/proj_8HNCM2DFob/data/AdmisGenerales", to the rules
+[LOGIN][QueryError] Index not defined, add ".indexOn": "Email", for path "/projects/proj_8HNCM2DFob/data/AdmisGenerales", to the rules
+[LOGIN][QueryError] Index not defined, add ".indexOn": "Email", for path "/projects/proj_8HNCM2DFob/data/AdmisGenerales", to the rules
+[LOGIN][QueryError] Index not defined, add ".indexOn": "Email", for path "/projects/proj_8HNCM2DFob/data/AdmisGenerales", to the rules
+[LOGIN][QueryError] Index not defined, add ".indexOn": "Email", for path "/projects/proj_8HNCM2DFob/data/AdmisGenerales", to the rules
+[LOGIN][QueryError] Index not defined, add ".indexOn": "Email", for path "/projects/proj_8HNCM2DFob/data/AdmisGenerales", to the rules
+[LOGIN][QueryError] Unable to connect to the API: cURL error 7: Failed to connect to oauth2.googleapis.com port 443: Connection was aborted (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://oauth2.googleapis.com/token
+[LOGIN][Exception] Unable to connect to the API: cURL error 7: Failed to connect to oauth2.googleapis.com port 443: Network unreachable (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://oauth2.googleapis.com/token
+[LOGIN][FAIL] Error consultando Firebase. Reintenta.
+[LOGIN][QueryError] Index not defined, add ".indexOn": "Email", for path "/projects/proj_8HNCM2DFob/data/AdmisGenerales", to the rules
+[LOGIN][QueryError] Index not defined, add ".indexOn": "Email", for path "/projects/proj_8HNCM2DFob/data/AdmisGenerales", to the rules
+[LOGIN][QueryError] Index not defined, add ".indexOn": "Email", for path "/projects/proj_8HNCM2DFob/data/AdmisGenerales", to the rules
+[LOGIN][QueryError] Index not defined, add ".indexOn": "Email", for path "/projects/proj_8HNCM2DFob/data/AdmisGenerales", to the rules
+[LOGIN][QueryError] Index not defined, add ".indexOn": "Email", for path "/projects/proj_8HNCM2DFob/data/AdmisGenerales", to the rules
+[LOGIN][QueryError] Index not defined, add ".indexOn": "Email", for path "/projects/proj_8HNCM2DFob/data/AdmisGenerales", to the rules
+[LOGIN][QueryError] Index not defined, add ".indexOn": "Email", for path "/projects/proj_8HNCM2DFob/data/AdmisGenerales", to the rules
+[LOGIN][QueryError] Index not defined, add ".indexOn": "Email", for path "/projects/proj_8HNCM2DFob/data/AdmisGenerales", to the rules
+[LOGIN][QueryError] Index not defined, add ".indexOn": "Email", for path "/projects/proj_8HNCM2DFob/data/AdmisGenerales", to the rules
+[LOGIN][QueryError] Index not defined, add ".indexOn": "Email", for path "/projects/proj_8HNCM2DFob/data/DesarrolloEmpresarios", to the rules
+[LOGIN][FAIL] Correo no encontrado en AdmisGenerales.
+[LOGIN][QueryError] Index not defined, add ".indexOn": "Email", for path "/projects/proj_8HNCM2DFob/data/DesarrolloEmpresarios", to the rules
+[LOGIN][FAIL] Correo no encontrado en AdmisGenerales.
+[LOGIN][QueryError] Index not defined, add ".indexOn": "Email", for path "/projects/proj_8HNCM2DFob/data/DesarrolloEmpresarios", to the rules
+[LOGIN][FAIL] Correo no encontrado en AdmisGenerales.
+[LOGIN][FAIL] Ingresa tu ID.
+[LOGIN][FAIL] Ingresa tu ID.
+[LOGIN][FAIL] Ingresa tu ID.
+[LOGIN][ByKeyError] The child key "prueba@gmail.com" contains one of the following invalid characters: ".$#[]"
+[LOGIN][QueryByIdError] Index not defined, add ".indexOn": "id", for path "/projects/proj_8HNCM2DFob/data/DesarrolloEmpresarios", to the rules
+[LOGIN][FAIL] ID no encontrado en DesarrolloEmpresarios.
+[LOGIN][ByKeyError] The child key "prueba@gmail.com" contains one of the following invalid characters: ".$#[]"
+[LOGIN][QueryByIdError] Index not defined, add ".indexOn": "id", for path "/projects/proj_8HNCM2DFob/data/DesarrolloEmpresarios", to the rules
+[LOGIN][FAIL] ID no encontrado en DesarrolloEmpresarios.
+[LOGIN][ByKeyError] The child key "prueba@gmail.com" contains one of the following invalid characters: ".$#[]"
+[LOGIN][QueryByIdError] Index not defined, add ".indexOn": "id", for path "/projects/proj_8HNCM2DFob/data/DesarrolloEmpresarios", to the rules
+[LOGIN][QueryByIdUsuarioError] Index not defined, add ".indexOn": "idUsuario", for path "/projects/proj_8HNCM2DFob/data/DesarrolloEmpresarios", to the rules
+[LOGIN][FAIL] ID no encontrado en DesarrolloEmpresarios.
+[LOGIN][ByKeyError] The child key "prueba@gmail.com" contains one of the following invalid characters: ".$#[]"
+[LOGIN][QueryByIdError] Index not defined, add ".indexOn": "id", for path "/projects/proj_8HNCM2DFob/data/DesarrolloEmpresarios", to the rules
+[LOGIN][QueryByIdUsuarioError] Index not defined, add ".indexOn": "idUsuario", for path "/projects/proj_8HNCM2DFob/data/DesarrolloEmpresarios", to the rules
+[LOGIN][FAIL] ID no encontrado en DesarrolloEmpresarios.
+[LOGIN][ByKeyError] The child key "prueba@gmail.com" contains one of the following invalid characters: ".$#[]"
+[LOGIN][QueryByIdError] Index not defined, add ".indexOn": "id", for path "/projects/proj_8HNCM2DFob/data/DesarrollosEmpresarios", to the rules
+[LOGIN][QueryByIdUsuarioError] Index not defined, add ".indexOn": "idUsuario", for path "/projects/proj_8HNCM2DFob/data/DesarrollosEmpresarios", to the rules
+[LOGIN][FAIL] ID no encontrado en DesarrolloEmpresarios.
+[LOGIN][ByKeyError] The child key "prueba@gmail.com" contains one of the following invalid characters: ".$#[]"
+[LOGIN][QueryByIdError] Index not defined, add ".indexOn": "id", for path "/projects/proj_8HNCM2DFob/data/DesarrollosEmpresarios", to the rules
+[LOGIN][ByKeyError] The child key "prueba@gmail.com" contains one of the following invalid characters: ".$#[]"
+[LOGIN][QueryByIdError] Index not defined, add ".indexOn": "id", for path "/projects/proj_8HNCM2DFob/data/DesarrollosEmpresarios", to the rules
+[LOGIN][ByKeyError] The child key "prueba@gmail.com" contains one of the following invalid characters: ".$#[]"
+[LOGIN][QueryByIdError] Index not defined, add ".indexOn": "id", for path "/projects/proj_8HNCM2DFob/data/DesarrollosEmpresarios", to the rules
+[LOGIN][QueryByIdUsuarioError] Index not defined, add ".indexOn": "idEmpresario", for path "/projects/proj_8HNCM2DFob/data/DesarrollosEmpresarios", to the rules
+[LOGIN][FAIL] ID no encontrado en DesarrolloEmpresarios.
+[LOGIN][ByKeyError] The child key "prueba@gmail.com" contains one of the following invalid characters: ".$#[]"
