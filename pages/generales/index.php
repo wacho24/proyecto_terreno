@@ -33,6 +33,8 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
     .preview-img{ width:100%; height:160px; object-fit:cover; border-radius:12px; border:1px solid #e5e7eb; background:#f8fafc; }
     .chip{ display:inline-flex; align-items:center; gap:.4rem; padding:.25rem .55rem; border-radius:999px; font-size:.75rem; background:#eef2ff; color:#3730a3; font-weight:700; }
     .table thead th{ font-weight:700; color:#3b2a72; }
+    .file-pill{ display:inline-flex; align-items:center; gap:.5rem; background:#f1f5f9; border:1px solid #e5e7eb; border-radius:999px; padding:.35rem .7rem; font-size:.8rem; }
+    .file-pill i{ opacity:.85; }
   </style>
 </head>
 <body class="g-sidenav-show bg-gray-100">
@@ -68,28 +70,36 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
                     <input type="text" name="Responsable" id="Responsable" class="form-control" placeholder="Nombre del responsable">
                   </div>
 
+                  <!-- NUEVO: Número de Expediente -->
+                  <div class="col-md-4">
+                    <label class="form-label">Número de expediente</label>
+                    <input type="text" name="NumeroExpediente" id="NumeroExpediente" class="form-control" placeholder="Ej. EXP-2025-00123">
+                  </div>
+
                   <div class="col-md-8">
                     <label class="form-label">Dirección</label>
                     <input type="text" name="Direccion" id="Direccion" class="form-control" placeholder="Calle, número, colonia, ciudad">
                   </div>
+
                   <div class="col-md-4">
                     <label class="form-label">Teléfono</label>
                     <input type="text" name="Telefono" id="Telefono" class="form-control" placeholder="Ej. 555-123-4567">
                   </div>
 
-                  <div class="col-md-6">
+                  <div class="col-md-4">
                     <label class="form-label">Email</label>
                     <input type="email" name="Email" id="Email" class="form-control" placeholder="correo@dominio.com">
                   </div>
-                  <div class="col-md-3">
+                  <div class="col-md-2">
                     <label class="form-label">Latitud</label>
                     <input type="text" name="Latitude" id="Latitude" class="form-control" placeholder="19.4326">
                   </div>
-                  <div class="col-md-3">
+                  <div class="col-md-2">
                     <label class="form-label">Longitud</label>
                     <input type="text" name="Longitude" id="Longitude" class="form-control" placeholder="-99.1332">
                   </div>
 
+                  <!-- PORTADA (imagen) -->
                   <div class="col-md-6">
                     <label class="form-label">Portada (URL)</label>
                     <input type="text" name="Portada" id="Portada" class="form-control" placeholder="https://.../imagen.jpg">
@@ -101,6 +111,23 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
                   </div>
                   <div class="col-md-3 d-flex align-items-end">
                     <img id="PortadaPreview" class="preview-img" alt="Portada" src="">
+                  </div>
+
+                  <!-- NUEVO: PLANO GENERAL (PDF) -->
+                  <div class="col-md-6">
+                    <label class="form-label">Plano general (URL PDF)</label>
+                    <input type="text" name="PlanoGeneral" id="PlanoGeneral" class="form-control" placeholder="https://.../plano.pdf">
+                    <div class="form-text">Si Apphive genera una URL del PDF, pégala aquí.</div>
+                  </div>
+                  <div class="col-md-3">
+                    <label class="form-label">Plano general (Archivo PDF)</label>
+                    <input type="file" name="PlanoGeneralFile" id="PlanoGeneralFile" accept="application/pdf" class="form-control">
+                  </div>
+                  <div class="col-md-3 d-flex align-items-end">
+                    <div id="PlanoBadge" class="file-pill" style="display:none;">
+                      <i class="fa-regular fa-file-pdf"></i>
+                      <a id="PlanoLink" href="#" target="_blank" rel="noopener">Abrir plano</a>
+                    </div>
                   </div>
                 </div>
               </form>
@@ -155,8 +182,8 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
     const ID_DES = <?= json_encode($idDesarrollo) ?>;
 
     // endpoints
-    const SAVE_GENERALES_URL = '../config_general/general_guardar.php'; // <— ahora guarda aquí
-    const SAVE_CUENTAS_URL   = 'save.php';                               // acciones de cuentas
+    const SAVE_GENERALES_URL = '../config_general/general_guardar.php';
+    const SAVE_CUENTAS_URL   = 'save.php';
     const GET_URL            = 'get.php';
 
     const esc = (s)=> String(s ?? '').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;' }[m]));
@@ -165,6 +192,18 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
       if (s.startsWith('"') && s.endsWith('"')) { try { s = JSON.parse(s); } catch{} }
       if (typeof s === 'string') { const i=s.indexOf('{'), j=s.lastIndexOf('}'); if(i>=0 && j>=0) s = s.slice(i, j+1); }
       return (typeof s === 'string') ? JSON.parse(s) : s;
+    }
+
+    function setPlanoBadge(url){
+      const badge = document.getElementById('PlanoBadge');
+      const link  = document.getElementById('PlanoLink');
+      if(url){
+        link.href = url;
+        link.textContent = 'Abrir plano';
+        badge.style.display = 'inline-flex';
+      }else{
+        badge.style.display = 'none';
+      }
     }
 
     function fillForm(data){
@@ -176,9 +215,14 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
       Email.value            = g('Email');
       Latitude.value         = g('Latitude');
       Longitude.value        = g('Longitude');
-      // compatibilidad: algunos guardan como FotoDesarrollo
+      NumeroExpediente.value = g('NumeroExpediente'); // nuevo
+
       Portada.value          = g('FotoDesarrollo') || g('Portada');
       PortadaPreview.src     = Portada.value || 'https://via.placeholder.com/600x300?text=Portada';
+
+      const plano = g('PlanoGeneral') || g('Plano');
+      PlanoGeneral.value = plano;
+      setPlanoBadge(plano);
     }
 
     async function cargar(){
@@ -195,36 +239,49 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 
     async function guardar(){
       const fd = new FormData(document.getElementById('frmGenerales'));
-      // Fuerza ID y añade timestamp de depuración
       fd.set('idDesarrollo', ID_DES);
       fd.set('_dbg_ts', new Date().toISOString());
 
       try{
-        console.log('[GUARDAR][POST] =>', SAVE_GENERALES_URL);
-        for (const [k,v] of fd.entries()) console.log('  ', k, '=>', v);
-
         const res = await fetch(SAVE_GENERALES_URL, { method:'POST', body: fd });
         const raw = await res.text();
-        console.log('[GUARDAR][RAW]', raw);
         const j   = parseServerJson(raw);
 
         if(!res.ok || !j || (j.ok!==true && j.status!=='ok')) {
           throw new Error((j && (j.error||j.message)) || ('HTTP '+res.status));
         }
         Swal.fire({icon:'success', title:'Cambios guardados', timer:1400, showConfirmButton:false});
+
         const urlPortada = j.portadaUrl || j.urlPortada;
         if(urlPortada){ Portada.value=urlPortada; PortadaPreview.src=urlPortada; }
+
+        const urlPlano = j.planoUrl || j.urlPlano || j.plano_general_url;
+        if(urlPlano){ PlanoGeneral.value = urlPlano; setPlanoBadge(urlPlano); }
       }catch(e){
         console.error(e);
         Swal.fire({icon:'error', title:'No se pudo guardar', text:String(e).slice(0,260)});
       }
     }
 
-    Portada.addEventListener('input', ()=> { PortadaPreview.src = Portada.value || 'https://via.placeholder.com/600x300?text=Portada'; });
+    Portada.addEventListener('input', ()=> {
+      PortadaPreview.src = Portada.value || 'https://via.placeholder.com/600x300?text=Portada';
+    });
     PortadaFile.addEventListener('change', (e)=>{
       const f = e.target.files?.[0];
       if(!f) return;
       PortadaPreview.src = URL.createObjectURL(f);
+    });
+
+    PlanoGeneral.addEventListener('input', ()=>{
+      const url = PlanoGeneral.value.trim();
+      setPlanoBadge(url || '');
+    });
+    PlanoGeneralFile.addEventListener('change', (e)=>{
+      const f = e.target.files?.[0];
+      if(!f) { setPlanoBadge(''); return; }
+      setPlanoBadge('#');
+      document.getElementById('PlanoLink').textContent = `Archivo seleccionado: ${f.name}`;
+      document.getElementById('PlanoLink').removeAttribute('href');
     });
 
     // ---------- Cuentas ----------
