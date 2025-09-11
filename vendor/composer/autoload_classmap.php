@@ -10,6 +10,7 @@ return array(
     'CURLStringFile' => $vendorDir . '/symfony/polyfill-php81/Resources/stubs/CURLStringFile.php',
     'Composer\\InstalledVersions' => $vendorDir . '/composer/InstalledVersions.php',
     'Dompdf\\Cpdf' => $vendorDir . '/dompdf/dompdf/lib/Cpdf.php',
+    'FPDF' => $vendorDir . '/setasign/fpdf/fpdf.php',
     'GPBMetadata\\GrpcGcp' => $vendorDir . '/google/grpc-gcp/src/generated/GPBMetadata/GrpcGcp.php',
     'Grpc\\Gcp\\AffinityConfig' => $vendorDir . '/google/grpc-gcp/src/generated/Grpc/Gcp/AffinityConfig.php',
     'Grpc\\Gcp\\AffinityConfig_Command' => $vendorDir . '/google/grpc-gcp/src/generated/Grpc/Gcp/AffinityConfig_Command.php',

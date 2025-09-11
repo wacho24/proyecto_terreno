@@ -66,8 +66,8 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
                     <input type="text" name="NombreDesarrollo" id="NombreDesarrollo" class="form-control" placeholder="Ej. Residencial Las Palmas">
                   </div>
                   <div class="col-md-6">
-                    <label class="form-label">Responsable</label>
-                    <input type="text" name="Responsable" id="Responsable" class="form-control" placeholder="Nombre del responsable">
+                    <label class="form-label">Dueño del desarrollo</label>
+                    <input type="text" name="Responsable" id="Responsable" class="form-control" placeholder="Nombre del dueño o empresario">
                   </div>
 
                   <!-- NUEVO: Número de Expediente -->
@@ -77,8 +77,15 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
                   </div>
 
                   <div class="col-md-8">
-                    <label class="form-label">Dirección</label>
+                    <label class="form-label">Dirección del desarrollo</label>
                     <input type="text" name="Direccion" id="Direccion" class="form-control" placeholder="Calle, número, colonia, ciudad">
+                  </div>
+
+                  <!-- NUEVO: Dirección particular -->
+                  <div class="col-md-12">
+                    <label class="form-label">Dirección particular (del dueño)</label>
+                    <input type="text" name="DireccionParticular" id="DireccionParticular" class="form-control" placeholder="Domicilio legal del dueño/empresario">
+                    <div class="form-text">Este domicilio se usará en los contratos.</div>
                   </div>
 
                   <div class="col-md-4">
@@ -113,7 +120,7 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
                     <img id="PortadaPreview" class="preview-img" alt="Portada" src="">
                   </div>
 
-                  <!-- NUEVO: PLANO GENERAL (PDF) -->
+                  <!-- PLANO GENERAL (PDF) -->
                   <div class="col-md-6">
                     <label class="form-label">Plano general (URL PDF)</label>
                     <input type="text" name="PlanoGeneral" id="PlanoGeneral" class="form-control" placeholder="https://.../plano.pdf">
@@ -208,17 +215,18 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 
     function fillForm(data){
       const g = (k)=> (data && data[k] != null) ? String(data[k]) : '';
-      NombreDesarrollo.value = g('NombreDesarrollo');
-      Responsable.value      = g('Responsable');
-      Direccion.value        = g('Direccion');
-      Telefono.value         = g('Telefono');
-      Email.value            = g('Email');
-      Latitude.value         = g('Latitude');
-      Longitude.value        = g('Longitude');
-      NumeroExpediente.value = g('NumeroExpediente'); // nuevo
+      NombreDesarrollo.value   = g('NombreDesarrollo');
+      Responsable.value        = g('Responsable');
+      Direccion.value          = g('Direccion');
+      DireccionParticular.value= g('DireccionParticular'); // NUEVO
+      Telefono.value           = g('Telefono');
+      Email.value              = g('Email');
+      Latitude.value           = g('Latitude');
+      Longitude.value          = g('Longitude');
+      NumeroExpediente.value   = g('NumeroExpediente');
 
-      Portada.value          = g('FotoDesarrollo') || g('Portada');
-      PortadaPreview.src     = Portada.value || 'https://via.placeholder.com/600x300?text=Portada';
+      Portada.value      = g('FotoDesarrollo') || g('Portada');
+      PortadaPreview.src = Portada.value || 'https://via.placeholder.com/600x300?text=Portada';
 
       const plano = g('PlanoGeneral') || g('Plano');
       PlanoGeneral.value = plano;
