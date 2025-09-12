@@ -683,6 +683,25 @@ function estadoBadge(tipo, estatusDb) {
       selLot.value = '';
       try { choicesLotes.removeActiveItems(); } catch {}
     }
+ // --- Prefill del precio cuando se elige un lote ---
+function setPrecioDesdeLote(loteId){
+  const inPrecio = document.getElementById('vl_precio');
+  if (!inPrecio) return;
+
+  const lot = MAP_LOTES[String(loteId)] || null;
+  if (!lot) { inPrecio.value = ''; return; }
+
+  // Busca el campo correcto de precio
+  const raw =
+    lot.precio ?? lot.pventa ?? lot.Precio ?? lot.PrecioVenta ?? 0;
+
+  inPrecio.value = Number(raw || 0);
+}
+
+// Evento: cuando elijo un lote en el select
+document.getElementById('vl_select')?.addEventListener('change', (e)=>{
+  setPrecioDesdeLote(e.target.value);
+});
 
     // ====== Cargar catálogos (Clientes/Lotes) ======
     async function cargarFuentes(allowLotIds = []) {
@@ -961,6 +980,8 @@ function estadoBadge(tipo, estatusDb) {
         }));
       }
       renderCarrito();
+const selLot = document.getElementById('vl_select');
+if (selLot && selLot.value) setPrecioDesdeLote(selLot.value);
 
       buildCuentaSelect();
       modalVenta.show();
@@ -1186,13 +1207,16 @@ async function guardarPago(){
       document.getElementById('qVentas')?.addEventListener('input', renderVentas);
 
       // NUEVO
-      document.getElementById('btnNuevo')?.addEventListener('click', async () => {
-        await cargarVentas();
-        await cargarFuentes([]);
-        await cargarCuentas();
-        resetForm();
-        modalVenta.show();
-      });
+     document.getElementById('btnNuevo')?.addEventListener('click', async () => {
+  await cargarVentas();
+  await cargarFuentes([]);
+  await cargarCuentas();
+  resetForm();
+  const sel = document.getElementById('vl_select');
+  if (sel && sel.value) setPrecioDesdeLote(sel.value); // precarga si hay lote
+  modalVenta.show();
+});
+
 
       // PAGAR (sin selección, abre modal vacío con ventas a crédito)
       document.getElementById('btnPagar')?.addEventListener('click', async ()=>{
