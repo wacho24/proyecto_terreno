@@ -199,7 +199,8 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
             <small class="text-muted">Listado de Lotes — Desarrollo: <code><?= h($idDesarrollo) ?></code></small>
           </div>
           <div class="ms-auto d-flex align-items-center gap-2">
-            <button type="button" class="btn btn-sm bg-gradient-primary" data-bs-toggle="modal" data-bs-target="#modalLote">
+            <!-- Agregado id para controlar el reset SOLO al crear -->
+            <button id="btnNuevoLote" type="button" class="btn btn-sm bg-gradient-primary" data-bs-toggle="modal" data-bs-target="#modalLote">
               <i class="fa-solid fa-plus"></i> Nuevo
             </button>
             <div class="search-wrap ms-2">
@@ -720,8 +721,8 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
       }
     });
 
-    // ========== LOTES: abrir modal (modo nuevo) ==========
-    document.getElementById('modalLote').addEventListener('show.bs.modal', () => {
+    // ========== LOTES: reset SOLO cuando es "Nuevo" ==========
+    function resetFormLote(){
       $('#titleLote').textContent = 'Registrar Nuevo Lote de Terreno';
       $('#loteIdEdit').value = '';
       $('#loteManzana').value = '';
@@ -730,8 +731,12 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
       $('#lotePrecio').value = '';
       $('#loteEstado').value = 'DISPONIBLE';
       $('#loteNota').value = '';
-      ['medFrontal','medDer','medIzq','medPost','loteArea'].forEach(id => { const el = document.getElementById(id); if (el) el.value=''; });
-    });
+      ['medFrontal','medDer','medIzq','medPost','loteArea'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value='';
+      });
+    }
+    document.getElementById('btnNuevoLote').addEventListener('click', resetFormLote);
 
     // ========== LOTES: guardar (crear o actualizar) ==========
     document.getElementById('formLote').addEventListener('submit', async (e)=>{
@@ -778,18 +783,50 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
         }
 
         if (isEdit) {
-          const it = LOTES.find(x=>x.id===loteId);
-          if (it) {
-            it.manzanaId = manzana; it.descripcion=desc; it.costo=Number(costo||0);
-            it.pventa=Number(precio||0); it.estado=estado; it.nota=nota;
-            it.mf=Number(mf||0); it.md=Number(md||0); it.mi=Number(mi||0); it.mp=Number(mp||0);
-            it.area=Number(area||0);
+          // Buscar de forma robusta (comparando como string)
+          const idx = LOTES.findIndex(x => String(x.id) === String(loteId));
+
+          const updated = {
+            id: String(loteId),
+            manzanaId: String(manzana),
+            descripcion: desc,
+            costo: Number(costo || 0),
+            pventa: Number(precio || 0),
+            estado,
+            nota,
+            mf: Number(mf || 0),
+            md: Number(md || 0),
+            mi: Number(mi || 0),
+            mp: Number(mp || 0),
+            area: Number(area || 0),
+            // Conserva el subobjeto venta si existía
+            venta: (idx > -1 ? LOTES[idx].venta : null),
+          };
+
+          if (idx > -1) {
+            // Reemplazo in-place para evitar referencias viejas
+            LOTES[idx] = updated;
+          } else {
+            // Si por algún motivo no se encontró, lo agregamos y dejamos rastro en consola
+            console.warn('Lote a actualizar no encontrado en memoria. Se agregará:', updated);
+            LOTES.push(updated);
           }
         } else {
+          // Crear
           LOTES.push({
-            id: data.loteId, manzanaId:manzana, descripcion:desc, costo:Number(costo||0),
-            pventa:Number(precio||0), estado, nota, mf:Number(mf||0), md:Number(md||0),
-            mi:Number(mi||0), mp:Number(mp||0), area:Number(area||0)
+            id: String(data.loteId),
+            manzanaId: String(manzana),
+            descripcion: desc,
+            costo: Number(costo || 0),
+            pventa: Number(precio || 0),
+            estado,
+            nota,
+            mf: Number(mf || 0),
+            md: Number(md || 0),
+            mi: Number(mi || 0),
+            mp: Number(mp || 0),
+            area: Number(area || 0),
+            venta: null,
           });
         }
 
@@ -824,6 +861,9 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
         $('#medIzq').value     = it.mi ?? '';
         $('#medPost').value    = it.mp ?? '';
         $('#loteArea').value   = it.area ?? '';
+
+        // recalcular área para mantener consistencia
+        if (typeof calcAreaLote === 'function') calcAreaLote();
 
         (new bootstrap.Modal(document.getElementById('modalLote'))).show();
         return;
