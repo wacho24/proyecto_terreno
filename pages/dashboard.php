@@ -174,6 +174,8 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
     #tabsContacto [data-bs-target="#pane-cony"],
     #tabsContacto [data-bs-target="#pane-otros"],
     #pane-cony,#pane-otros { display:none!important; }
+
+    
   </style>
 </head>
 
@@ -203,6 +205,10 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
               <div class="ms-auto d-flex align-items-center gap-2">
                 <button class="btn btn-sm bg-gradient-primary" id="btnNuevo">
                   <i class="fa-solid fa-plus"></i> Nuevo
+                </button>
+                <!-- NUEVO: botón Descargar Excel -->
+                <button class="btn btn-sm btn-outline-primary" id="btnExportExcel" title="Descargar Excel (.xlsx)">
+                  <i class="fa-solid fa-download"></i> Descargar Excel
                 </button>
                 <div class="search-wrap ms-2">
                   <div class="input-group">
@@ -393,6 +399,9 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
   <script src="../assets/js/plugins/smooth-scrollbar.min.js"></script>
   <script src="../assets/js/soft-ui-dashboard.min.js?v=1.1.0"></script>
 
+  <!-- NUEVO: SheetJS para Excel -->
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+
   <script>
     /* ============================ */
     /*  CONFIG                      */
@@ -413,7 +422,7 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
     const rowIndex    = document.getElementById('rowIndex');
     const $           = id => document.getElementById(id);
 
-    // *** CAMBIO (1): definir esc ANTES de usarse en todo el archivo
+    // *** definir esc ANTES de usarse
     const esc = s => (s || '').replace(/[&<>"']/g, m => ({
       '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'
     }[m]));
@@ -507,10 +516,6 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
       return o;
     }
 
-    /* ============================
-       buildPayload con updates (sin null)
-       ============================ */
-
     // Helper: convierte email a minúsculas y a base64 (no url-safe)
     function emailToBase64(email) {
       const raw = (email || '').trim();
@@ -601,7 +606,7 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
       }
       if(!ID_DESARROLLO){
         Swal.fire({ icon:'error', title:'Falta idDesarrollo', text:'Tu sesión no tiene idDesarrollo. Vuelve a iniciar sesión.' });
-        return; // *** CAMBIO (2): corta el flujo si falta ID
+        return;
       }
 
       let payload;
@@ -622,7 +627,7 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
       if(result.ok){
         const ix = rowIndex.value!=='' ? +rowIndex.value : -1;
 
-        // *** CAMBIO (3): actualizar la UI sin perder campos y mostrando al instante
+        // actualizar la UI sin perder campos y mostrando al instante
         const uiPatch = {
           id:            payload?.Cliente?.id || (d.email || '').trim().toLowerCase(),
           curp:          d.curp || '',
@@ -635,8 +640,8 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
           municipio:     d.municipio || '',
           localidad:     d.localidad || '',
           direccion:     d.direccion || '',
-          codigoPostal:  d.codigoPostal || '',   // aunque no está en el form, la tabla lo espera
-          notas:         d.ubicacionLibre || ''  // la tabla usa 'notas'
+          codigoPostal:  d.codigoPostal || '',
+          notas:         d.ubicacionLibre || ''
         };
 
         if(ix>=0){
@@ -716,9 +721,71 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
       });
     }
 
+    /* ============================
+       NUEVO: utilidades para exportar Excel
+       ============================ */
+    function getFilteredContactos() {
+      const q = (inputBuscar?.value || '').trim().toLowerCase();
+      if (!q) return contactos.slice();
+      return contactos.filter(c => {
+        const hay = `${c.nombre||''} ${c.curp||''} ${c.telefono||''} ${c.email||''} ${c.direccion||''} ${c.municipio||''} ${c.localidad||''} ${c.estado||''} ${c.pais||''} ${c.notas||''}`.toLowerCase();
+        return hay.includes(q);
+      });
+    }
+
+    function fechaFileStamp() {
+      const d = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}`;
+    }
+
+    function exportarExcel() {
+      const rows = getFilteredContactos();
+
+      const headers = [
+        'N°','Nombres y Apellidos','CURP/RFC','Teléfono','Email',
+        'Dirección','Ubicación','País','Estado','Municipio','Localidad','Código Postal','ID'
+      ];
+
+      const data = rows.map((c, i) => ([
+        i + 1,
+        c.nombre || '',
+        c.curp || '',
+        c.telefono || '',
+        c.email || '',
+        [c.direccion, c.codigoPostal].filter(Boolean).join(' '),
+        [c.municipio, c.estado, c.pais].filter(Boolean).join(', '),
+        c.pais || '',
+        c.estado || '',
+        c.municipio || '',
+        c.localidad || '',
+        c.codigoPostal || '',
+        c.id || ''
+      ]));
+
+      const aoa = [headers, ...data];
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+
+      // Anchos de columna aproximados
+      ws['!cols'] = [
+        { wch: 5 }, { wch: 28 }, { wch: 18 }, { wch: 14 }, { wch: 28 },
+        { wch: 30 }, { wch: 26 }, { wch: 10 }, { wch: 16 }, { wch: 18 },
+        { wch: 18 }, { wch: 12 }, { wch: 26 }
+      ];
+
+      XLSX.utils.book_append_sheet(wb, ws, 'Contactos');
+      const nombre = `Contactos_${ID_DESARROLLO || 'desarrollo'}_${fechaFileStamp()}.xlsx`;
+      XLSX.writeFile(wb, nombre);
+    }
+
+    // Listeners
     document.getElementById('btnNuevo').addEventListener('click', openNuevo);
     document.getElementById('btnGuardar').addEventListener('click', guardar);
     document.getElementById('inputBuscar').addEventListener('input', renderTabla);
+    // NUEVO: listener del botón de Excel
+    document.getElementById('btnExportExcel').addEventListener('click', exportarExcel);
 
     renderTabla();
     window.editarContacto=openEditar;
