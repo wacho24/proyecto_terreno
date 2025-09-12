@@ -89,6 +89,36 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
     .form-control, .form-select{ border-radius:12px; padding:.65rem .8rem; }
     .input-group-text{ border-radius:12px; }
     .swal2-popup{ border-radius:18px; padding:1.2rem 1.2rem 1rem; }
+
+    /* === Choices: ancho del contenedor dentro de input-group === */
+.input-group > .choices { 
+  flex: 1 1 auto;                 /* que ocupe todo el ancho del input-group */
+  min-width: 0;                   /* evita desbordes */
+}
+
+/* === Haz más anchos los dropdowns de los selects con Choices === */
+#vd_cliente + .choices,
+#vl_select + .choices,
+#vf_cuenta_sel + .choices {
+  width: 100% !important;         /* que el control se vea del ancho del input */
+}
+
+/* El menú desplegable: más ancho y sin saltos raros */
+#vd_cliente + .choices .choices__list--dropdown,
+#vl_select + .choices .choices__list--dropdown,
+#vf_cuenta_sel + .choices .choices__list--dropdown {
+  min-width: 420px !important;    /* ajusta a gusto: 420–520px suele ir bien */
+  white-space: nowrap;            /* evita que parta el texto en varias líneas */
+  overflow-x: hidden;             /* oculta overflow horizontal si aplica */
+}
+
+/* Las opciones dentro del menú: mantener en una línea */
+#vd_cliente + .choices .choices__list--dropdown .choices__item,
+#vl_select + .choices .choices__list--dropdown .choices__item,
+#vf_cuenta_sel + .choices .choices__list--dropdown .choices__item {
+  white-space: nowrap;
+}
+
   </style>
 </head>
 <body class="g-sidenav-show bg-gray-100">
@@ -512,17 +542,16 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
       return fn(base, steps);
     }
 
-    function estadoBadge(estatus) {
-  const x = String(estatus||'').toUpperCase();
-  if (x === 'LIQUIDADO' || x === 'LIQUIDADA') {
-    return `<span class="badge-estado st-liq">LIQUIDADO</span>`;
-  }
-  if (x === 'PENDIENTE' || x === 'PENDIENTES' || !x) {
-    return `<span class="badge-estado st-pend">PENDIENTE</span>`;
-  }
-  // fallback
-  return `<span class="badge-estado st-pend">${x}</span>`;
+function estadoBadge(tipo, estatusDb) {
+  const t  = String(tipo||'').toUpperCase();
+  const st = String(estatusDb||'').toUpperCase();
+  // Si la DB ya dice LIQUIDADO, manda LIQUIDADO sin importar el tipo
+  const esLiquidado = st === 'LIQUIDADO' || t.includes('CONTADO');
+  return `<span class="badge-estado ${esLiquidado?'st-liq':'st-pend'}">
+            ${esLiquidado?'LIQUIDADO':'PENDIENTE'}
+          </span>`;
 }
+
 
 
     // ====== Estado ======
@@ -562,7 +591,7 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
           <td>${v.fecha||''}</td>
           <td>${tipoChip}</td>
           <td class="text-end">${money(v.total||0)}</td>
-          <td>${estadoBadge(v.tipo)}</td>
+          <td>${estadoBadge(v.tipo, v.estatus)}</td>
           <td>${v.contrato||''}</td>
           <td class="text-center">
             <div class="btn-group">
