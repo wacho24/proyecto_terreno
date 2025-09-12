@@ -1,0 +1,58 @@
+[
+    {
+        "id": "pg_68c44976e22ed6.79564154",
+        "idDesarrollo": "-OZBO0U_OAWnqyuWxUDl",
+        "idVenta": "-OZf8B2mjzECRZwYWZfB",
+        "idLote": "150     manzana 150",
+        "Estatus": "PENDIENTE",
+        "FechaPago": "2025-09-12",
+        "FormaPago": "EFECTIVO",
+        "Referencia": "",
+        "Total": 1000,
+        "Comprobante": "..\/uploads\/pagos\/-OZf8B2mjzECRZwYWZfB\/20250912_182526_e10941a9.jpg",
+        "ts": 1757694326,
+        "user": "prueba@gmail.com"
+    },
+    {
+        "id": "pg_68c44a132dbdf0.53387246",
+        "idDesarrollo": "-OZBO0U_OAWnqyuWxUDl",
+        "idVenta": "-OZf8B2mjzECRZwYWZfB",
+        "idLote": "150     manzana 150",
+        "Estatus": "CONFIRMADO",
+        "FechaPago": "2025-09-12",
+        "FormaPago": "EFECTIVO",
+        "Referencia": "se pago",
+        "Total": 1000,
+        "Comprobante": "..\/uploads\/pagos\/-OZf8B2mjzECRZwYWZfB\/20250912_182803_07a61097.jpg",
+        "ts": 1757694483,
+        "user": "prueba@gmail.com"
+    },
+    {
+        "id": "pg_68c44ac3a0c9b5.09812396",
+        "idDesarrollo": "-OZBO0U_OAWnqyuWxUDl",
+        "idVenta": "-OZfCXRwTlZYGLR2ZTSk",
+        "idLote": "500     manzana 500",
+        "Estatus": "CONFIRMADO",
+        "FechaPago": "2025-09-12",
+        "FormaPago": "EFECTIVO",
+        "Referencia": "dldld",
+        "Total": 5000,
+        "Comprobante": "..\/uploads\/pagos\/-OZfCXRwTlZYGLR2ZTSk\/20250912_183059_a6aae8f5.jpg",
+        "ts": 1757694659,
+        "user": "prueba@gmail.com"
+    },
+    {
+        "id": "pg_68c44b04c44648.93146321",
+        "idDesarrollo": "-OZBO0U_OAWnqyuWxUDl",
+        "idVenta": "-OZfCXRwTlZYGLR2ZTSk",
+        "idLote": "500     manzana 500",
+        "Estatus": "CONFIRMADO",
+        "FechaPago": "2025-09-12",
+        "FormaPago": "EFECTIVO",
+        "Referencia": "cbdb",
+        "Total": 5000,
+        "Comprobante": "..\/uploads\/pagos\/-OZfCXRwTlZYGLR2ZTSk\/20250912_183204_1de4c0dd.jpg",
+        "ts": 1757694724,
+        "user": "prueba@gmail.com"
+    }
+]

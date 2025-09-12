@@ -1,8 +1,9 @@
 <?php
 // pages/ventas.php
 require_once __DIR__ . '/_guard.php';
-session_start();
+if (session_status() === PHP_SESSION_NONE) { session_start(); }
 
+// Id del desarrollo (desde query o sesión)
 $idDesarrollo = isset($_GET['id']) ? (string)$_GET['id'] : ($_SESSION['idDesarrollo'] ?? '');
 $idDesarrollo = preg_replace('/[^A-Za-z0-9_\-]/', '', $idDesarrollo);
 if ($idDesarrollo === '') { header('Location: ../index.php'); exit; }
@@ -30,13 +31,24 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
   <style>
     :root{
       --brand1:#6a39b6; --brand2:#7b61ff; --ink:#0f172a; --muted:#64748b;
       --chip-ok:#ede9fe; --chip-warn:#fff7ed; --chip-ink-ok:#5b21b6; --chip-ink-warn:#c2410c;
+      --ok:#10b981; --danger:#ef4444;
     }
     body{ color:var(--ink); }
     .search-wrap{ max-width:420px }
+    .btn-gradient{
+      background:linear-gradient(90deg,var(--brand1),var(--brand2)); color:#fff;
+      border:0; border-radius:12px; padding:.55rem .9rem; font-weight:800;
+      box-shadow:0 10px 18px rgba(102, 51, 204, .25);
+    }
+    .btn-gradient:hover{ filter:brightness(1.02); color:#fff; }
+    .btn-emerald{ background:var(--ok); color:#fff; border:0; border-radius:12px; padding:.55rem .9rem; font-weight:800; }
+    .btn-emerald:hover{ filter:brightness(1.02); color:#fff; }
+
     .modal-header{
       background:linear-gradient(90deg,var(--brand1),var(--brand2)); color:#fff;
     }
@@ -53,20 +65,12 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
       box-shadow:0 6px 14px rgba(107, 70, 193, .25);
     }
 
-    /* Tabla */
     .card-body .table thead th{
       position:sticky; top:0; z-index:2; background:#fff; border-bottom:1px solid #e2e8f0;
     }
     .card-body .table tbody tr:hover{ background:#fafcff; }
     .card-body .table tbody tr:nth-child(odd){ background:#fcfdff; }
-
-    .text-teal{ color:#0f766e }
-    .badge-estado{
-      padding:.3rem .65rem; border-radius:999px; font-weight:800; letter-spacing:.02em;
-      font-size:.72rem;
-    }
-    .st-liq{ background:var(--chip-ok); color:var(--chip-ink-ok); }
-    .st-pend{ background:var(--chip-warn); color:var(--chip-ink-warn); }
+    .table .text-truncate{ max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
     .chip{
       display:inline-flex; align-items:center; gap:.35rem;
@@ -74,39 +78,17 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
       background:#eef2ff; color:#3730a3;
     }
     .chip i{ font-size:.75rem }
-    .btn-group .btn{ padding:.35rem .55rem; border-radius:10px; }
-    .btn-outline-secondary, .btn-outline-primary, .btn-outline-danger, .btn-outline-warning{
-      background:#fff; border-color:#e5e7eb;
+    .badge-estado{
+      padding:.3rem .65rem; border-radius:999px; font-weight:800; letter-spacing:.02em;
+      font-size:.72rem;
     }
-    .btn-outline-secondary:hover{ background:#f3f4f6; }
-    .btn-outline-primary:hover{ background:#eef2ff; }
-    .btn-outline-danger:hover{ background:#fee2e2; }
-    .btn-outline-warning:hover{ background:#fff7ed; }
+    .st-liq{ background:var(--chip-ok); color:var(--chip-ink-ok); }
+    .st-pend{ background:var(--chip-warn); color:var(--chip-ink-warn); }
 
+    .small-note{ font-size:.82rem; color:#64748b }
     .form-control, .form-select{ border-radius:12px; padding:.65rem .8rem; }
     .input-group-text{ border-radius:12px; }
-
-    .list-group .active{ background:linear-gradient(90deg,var(--brand1),var(--brand2)); border-color:transparent; }
-
     .swal2-popup{ border-radius:18px; padding:1.2rem 1.2rem 1rem; }
-    .swal2-title{ font-weight:800; letter-spacing:.01em; }
-    .swal2-actions .btn{ border-radius:12px; }
-
-    .btn-gradient{
-      background:linear-gradient(90deg,var(--brand1),var(--brand2)); color:#fff;
-      border:0; border-radius:12px;
-      box-shadow:0 10px 18px rgba(102, 51, 204, .25);
-    }
-    .btn-gradient:hover{ filter:brightness(1.02); color:#fff; }
-
-    .table .text-truncate{ max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .small-note{ font-size:.82rem; color:#64748b }
-
-    /* Choices.js — hacer los dropdowns más cómodos/anchos */
-    .choices{ --shadow:0 10px 24px rgba(2,6,23,.10); }
-    .choices.is-open .choices__list--dropdown{ width:100%; min-width:520px; box-shadow:var(--shadow); }
-    .choices__inner{ border-radius:12px; padding:.55rem .65rem; }
-    .choices__list--dropdown .choices__item{ padding:.6rem .75rem; }
   </style>
 </head>
 <body class="g-sidenav-show bg-gray-100">
@@ -122,8 +104,13 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
             <h6 class="mb-0" style="font-weight:800">Ventas</h6>
             <small class="text-muted">Desarrollo: <code><?= h($idDesarrollo) ?></code></small>
           </div>
+
           <div class="ms-auto d-flex align-items-center gap-2">
-            <button type="button" id="btnNuevo" class="btn btn-sm btn-gradient">+ Nuevo</button>
+            <!-- NUEVO (sin +) -->
+            <button type="button" id="btnNuevo" class="btn btn-sm btn-gradient">Nuevo</button>
+            <!-- PAGAR -->
+            <button type="button" id="btnPagar" class="btn btn-sm btn-emerald">Pagar</button>
+
             <div class="search-wrap ms-2">
               <div class="input-group">
                 <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
@@ -146,7 +133,7 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
                   <th class="text-end">Total</th>
                   <th>Estado</th>
                   <th>Contrato</th>
-                  <th class="text-center" style="width:230px">Acciones</th>
+                  <th class="text-center" style="width:270px">Acciones</th>
                 </tr>
               </thead>
               <tbody id="tbVentas"></tbody>
@@ -328,7 +315,7 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
                       <input type="date" class="form-control" id="vf_inicio" disabled>
                     </div>
 
-                    <!-- Cuenta (como SELECT con Choices) -->
+                    <!-- Cuenta (Select) -->
                     <div class="col-md-6">
                       <label class="form-label fw-semibold">Número de cuenta</label>
                       <select id="vf_cuenta_sel" class="form-select">
@@ -346,7 +333,7 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
                   </div>
                 </div>
               </div>
-            </div>
+            </div><!-- /pane-fin -->
           </form>
         </div><!-- /modal-body -->
 
@@ -357,6 +344,100 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
           <button type="button" class="btn btn-light" data-bs-dismiss="modal">
             <i class="fa-solid fa-rectangle-xmark me-1"></i> Cancelar
           </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== MODAL: REGISTRAR PAGO (con imagen comprobante) ========== -->
+  <div class="modal fade" id="modalPagar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h6 class="modal-title"><i class="fa-solid fa-sack-dollar me-2"></i> Registrar Pago — <small class="fw-normal"><?= h($idDesarrollo) ?></small></h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <form id="formPagar" class="modal-body" enctype="multipart/form-data">
+          <input type="hidden" name="idDesarrollo" value="<?= h($idDesarrollo) ?>">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Venta</label>
+            <select class="form-select" id="pg_venta" name="idVenta" required>
+              <option value="">Seleccione venta…</option>
+            </select>
+            <div class="small-note">Si abriste el modal desde una fila, ya viene seleccionada.</div>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Lote</label>
+              <select class="form-select" id="pg_lote" name="idLote">
+                <option value="">(Si la venta tiene varios, elige uno)</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Estatus</label>
+              <select class="form-select" id="pg_estatus" name="Estatus">
+                <option value="CONFIRMADO" selected>CONFIRMADO</option>
+                <option value="PENDIENTE">PENDIENTE</option>
+                <option value="RECHAZADO">RECHAZADO</option>
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Fecha de pago</label>
+              <input type="date" class="form-control" id="pg_fecha" name="FechaPago" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Forma de pago</label>
+              <select class="form-select" id="pg_forma" name="FormaPago" required>
+                <option value="">Seleccione…</option>
+                <option>EFECTIVO</option>
+                <option>TRANSFERENCIA</option>
+                <option>TARJETA</option>
+                <option>DEPÓSITO</option>
+                <option>CHEQUE</option>
+                <option>OTRO</option>
+              </select>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label fw-semibold">Comprobante (imagen o PDF)</label>
+              <input type="file" class="form-control" id="pg_comp" name="Comprobante" accept="image/*,.pdf">
+              <div class="small-note">Opcional. Formatos: JPG/PNG/WebP/PDF.</div>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label fw-semibold">Referencia</label>
+              <input type="text" class="form-control" id="pg_ref" name="Referencia" placeholder="Folio, referencia o URL">
+            </div>
+
+            <div class="col-12">
+              <label class="form-label fw-semibold">Total ($)</label>
+              <input type="text" inputmode="decimal" class="form-control" id="pg_total" name="Total" required value="0.00">
+            </div>
+          </div>
+        </form>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-emerald" id="btnGuardarPago"><i class="fa-regular fa-floppy-disk me-1"></i> Guardar pago</button>
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== MODAL: DETALLE/PAGOS DE UNA VENTA ========== -->
+  <div class="modal fade" id="modalPagosVenta" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h6 class="modal-title"><i class="fa-regular fa-eye me-2"></i> Pagos de la Venta</h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <div id="pagosVentaBody">Cargando…</div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cerrar</button>
         </div>
       </div>
     </div>
@@ -399,7 +480,6 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
       const n = Number(s);
       return Number.isFinite(n) ? n : 0;
     }
-
     const norm = (s) => String(s||'').toLowerCase().replace(/\s+/g,' ').replace(/\s*[—–-]\s*/g,' - ').trim();
 
     // Fechas
@@ -416,7 +496,6 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 
     function addMonths(d,n){ const x=new Date(d.getTime()); const day=x.getDate(); x.setMonth(x.getMonth()+n); if(x.getDate()<day) x.setDate(0); return x; }
     function addDays(d,n){ const x=new Date(d.getTime()); x.setDate(x.getDate()+n); return x; }
-
     function stepByModalidad(mod, base, steps){
       const M = String(mod||'').toUpperCase();
       const map = {
@@ -433,69 +512,18 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
       return fn(base, steps);
     }
 
-    // Calcula fin en UI
-    function recomputeFin(){
-      const plan = document.getElementById('vf_plan').checked;
-      const mod  = document.getElementById('vf_modalidad').value || '';
-      const n    = Number(document.getElementById('vf_cuotas').value || 0);
-      const iniS = document.getElementById('vf_inicio').value || '';
-      const finI = document.getElementById('vf_fin');
+    function estadoBadge(estatus) {
+  const x = String(estatus||'').toUpperCase();
+  if (x === 'LIQUIDADO' || x === 'LIQUIDADA') {
+    return `<span class="badge-estado st-liq">LIQUIDADO</span>`;
+  }
+  if (x === 'PENDIENTE' || x === 'PENDIENTES' || !x) {
+    return `<span class="badge-estado st-pend">PENDIENTE</span>`;
+  }
+  // fallback
+  return `<span class="badge-estado st-pend">${x}</span>`;
+}
 
-      if (!plan){ finI.value=''; return; }
-      const inicio = parseDMY(iniS);
-      if (!inicio || !n || n<=0){ finI.value=''; return; }
-
-      const fin = stepByModalidad(mod, inicio, n-1); // último vencimiento
-      finI.value = toISO(fin);
-    }
-
-    // Preview de plan (para Ver)
-    function planPreview({modalidad, inicioDMY, cuotas, finDMY}){
-      const inicio = parseDMY(inicioDMY);
-      const fin    = parseDMY(finDMY);
-      let total    = Number(cuotas||0);
-
-      if (!inicio) return { restantes:null, proximo:null, fin:fin || null };
-
-      if ((!total || total<=0) && fin){
-        let k=0; const CAP=2000;
-        while (k<CAP){
-          const f = stepByModalidad(modalidad, inicio, k);
-          if (f>fin) break; k++;
-        }
-        total = k;
-      }
-      if (!total || total<=0) return { restantes:null, proximo:null, fin:fin || null };
-
-      const hoy = new Date(); hoy.setHours(0,0,0,0);
-
-      let proximo=null, restantes=0;
-      for (let k=0; k<total; k++){
-        const f = stepByModalidad(modalidad, inicio, k);
-        if (fin && f>fin) break;
-        if (f > hoy && !proximo) proximo = f;
-        if (f > hoy) restantes++;
-      }
-
-      const finCalc = fin || stepByModalidad(modalidad, inicio, total-1);
-      return { restantes, proximo, fin: finCalc };
-    }
-
-    const DOW = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
-    function diaPagoTexto(modalidad, inicioDMY){
-      const MOD = String(modalidad||'').toUpperCase();
-      const dInicio = parseDMY(inicioDMY);
-      if (!dInicio) return '—';
-      if (MOD === 'SEMANAL') return `cada ${DOW[dInicio.getDay()]}`;
-      if (MOD === 'QUINCENAL') return `cada 15 días (desde el día ${dInicio.getDate()})`;
-      return `día ${dInicio.getDate()} de cada periodo`;
-    }
-
-    function estadoBadge(tipo) {
-      const x = String(tipo||'').toUpperCase();
-      const esContado = x.includes('CONTADO');
-      return `<span class="badge-estado ${esContado?'st-liq':'st-pend'}">${esContado?'LIQUIDADO':'PENDIENTE'}</span>`;
-    }
 
     // ====== Estado ======
     let LOADED=false;
@@ -505,8 +533,9 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
     const MAP_LOTES_BY_LABEL = {};
     let choicesClientes = null, choicesLotes = null, choicesCuentas = null;
     let VENTAS = [];
-    const modalVenta = new bootstrap.Modal('#modalRegistrarVenta');
-    let LOTE_CHANGE_BOUND = false;
+    const modalVenta  = new bootstrap.Modal('#modalRegistrarVenta');
+    const modalPagar  = new bootstrap.Modal('#modalPagar');
+    const modalPagosV = new bootstrap.Modal('#modalPagosVenta');
 
     // ====== Tabla ======
     function renderVentas() {
@@ -548,6 +577,9 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
               </button>
               <button class="btn btn-sm btn-outline-warning" title="Contrato" data-action="contrato" data-id="${v.id}">
                 <i class="fa-regular fa-file-lines"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-success" title="Pagos" data-action="pagos" data-id="${v.id}">
+                <i class="fa-solid fa-coins"></i>
               </button>
             </div>
           </td>
@@ -616,22 +648,11 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
       });
 
       choicesLotes = new Choices('#vl_select', {
-        shouldSort:false, searchResultLimit:100, itemSelectText:'',
-        removeItemButton:false, allowHTML:true, searchPlaceholderValue:'Buscar...'
+        shouldSort:false, searchResultLimit:100, itemSelectText:'', removeItemButton:false, allowHTML:true, searchPlaceholderValue:'Buscar...'
       });
 
       selLot.value = '';
       try { choicesLotes.removeActiveItems(); } catch {}
-
-      if (!LOTE_CHANGE_BOUND) {
-        selLot.addEventListener('change', () => {
-          const lot = MAP_LOTES[selLot.value];
-          if (lot && typeof lot.precio === 'number' && lot.precio > 0) {
-            document.getElementById('vl_precio').value = lot.precio;
-          }
-        });
-        LOTE_CHANGE_BOUND = true;
-      }
     }
 
     // ====== Cargar catálogos (Clientes/Lotes) ======
@@ -665,7 +686,7 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
       buildLoteSelect(allowLotIds);
     }
 
-    // ====== Cuentas (como SELECT) ======
+    // ====== Cuentas (Select) ======
     async function cargarCuentas(){
       try{
         const res = await fetch('cuentas_list.php?id='+encodeURIComponent(ID_DES), {cache:'no-store'});
@@ -678,7 +699,6 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
       }
       buildCuentaSelect();
     }
-
     function buildCuentaSelect(preferId=''){
       const sel = document.getElementById('vf_cuenta_sel');
       const hidden = document.getElementById('vf_cuenta');
@@ -757,7 +777,6 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
       CARRITO.push({ id: lotId, label: (lot.label||lotId), precio });
       renderCarrito();
     }
-
     document.addEventListener('click', (ev)=>{
       const del = ev.target.closest('#vl_tbody button[data-ix]');
       if (del) { const ix = +del.dataset.ix; if (ix>=0 && ix < CARRITO.length) { CARRITO.splice(ix,1); renderCarrito(); } }
@@ -840,21 +859,14 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
           const data = parseServerJson(await res.text());
           if (res.ok && data?.ok) {
             const det = data.venta || {};
-            const pv  = planPreview({
-              modalidad: det.ModalidadPagos || '',
-              inicioDMY: det.FechaInicio     || '',
-              cuotas:    det.CantidadCuotas  || 0,
-              finDMY:    det.FechaFinalizacion || ''
-            });
-
             planHtml = `
-              <div class="mb-2"><b>Plan de pagos:</b> ${det.ModalidadPagos || '—'}${det.CantidadCuotas?` · ${det.CantidadCuotas} cuotas`:''}</div>
-              <div class="mb-2"><b>Inicio:</b> ${det.FechaInicio || '—'} &nbsp; <b>Fin:</b> ${fmtDMY(pv.fin)}</div>
-              <div class="mb-2"><b>Próximo pago:</b> ${pv.proximo?fmtDMY(pv.proximo):'—'} &nbsp; <b>Cuotas restantes:</b> ${pv.restantes ?? '—'}</div>
-              <div class="mb-2"><b>Día de pago:</b> ${diaPagoTexto(det.ModalidadPagos, det.FechaInicio)}</div>
+              <div class="mt-2 p-2 rounded" style="background:#f8fafc">
+                <div><b>Plan de pagos:</b> ${det.ModalidadPagos || '—'} ${det.CantidadCuotas?`· ${det.CantidadCuotas} cuotas`:''}</div>
+                <div><b>Inicio:</b> ${det.FechaInicio || '—'} · <b>Fin:</b> ${det.FechaFinalizacion || '—'}</div>
+              </div>
             `;
           }
-        } catch (e) { console.warn('detalle venta error', e); }
+        } catch (e) { /* opcional */ }
       }
 
       const estado = estadoBadge(v.tipo);
@@ -921,11 +933,7 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
       }
       renderCarrito();
 
-      // Si tu API devuelve los campos de cuenta guardados, podrías prefijar así:
-      // buildCuentaSelect(v.enganche?.cuentaId || '');
       buildCuentaSelect();
-
-      recomputeFin();
       modalVenta.show();
     }
 
@@ -1014,11 +1022,141 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
       }
     }
 
+    // ====== PAGOS ======
+
+    // Rellena el select de ventas (para el modal de pagar)
+    function fillVentasSelect(select, preferId = ''){
+      select.innerHTML = '<option value="">Seleccione venta…</option>';
+      (VENTAS||[]).forEach(v=>{
+        const esCredito = String(v.tipo||'').toUpperCase().includes('CREDITO');
+        if (!esCredito) return; // solo crédito
+        const opt = document.createElement('option');
+        opt.value = v.id;
+        opt.textContent = `${v.cliente||'Cliente'} — ${v.contrato||''} — ${money(v.total||0)}`;
+        select.appendChild(opt);
+      });
+      if (preferId){ select.value = preferId; }
+      buildLotesDeVentaEnPagar(preferId);
+    }
+
+    // Cuando elijo una venta para pagar, cargar sus lotes
+    function buildLotesDeVentaEnPagar(ventaId){
+      const sel = document.getElementById('pg_lote');
+      sel.innerHTML = '<option value="">(Si la venta tiene varios, elige uno)</option>';
+      if (!ventaId) return;
+      const v = (VENTAS||[]).find(x=>x.id===ventaId);
+      if (!v) return;
+
+      if (Array.isArray(v.lotes) && v.lotes.length){
+        v.lotes.forEach(it=>{
+          const opt=document.createElement('option');
+          opt.value = it.id || '';
+          opt.textContent = `${it.label||it.id} — ${money(it.precio||0)}`;
+          sel.appendChild(opt);
+        });
+      }else if (v.lote){
+        const opt=document.createElement('option');
+        opt.value = v.lote; opt.textContent = v.lote;
+        sel.appendChild(opt);
+      }
+    }
+
+    // Abre modal de pagar
+    function openModalPagar(preferVentaId=''){
+      const f = document.getElementById('formPagar');
+      f.reset();
+      document.getElementById('pg_fecha').value = toISO(new Date());
+      fillVentasSelect(document.getElementById('pg_venta'), preferVentaId);
+      modalPagar.show();
+    }
+
+    // Guardar pago (con archivo)
+async function guardarPago(){
+  const f = document.getElementById('formPagar');
+  const ventaId = document.getElementById('pg_venta').value;
+  const loteId  = document.getElementById('pg_lote').value;
+  const total   = normalizeMoney(document.getElementById('pg_total').value);
+
+  if (!ventaId || !total || total <= 0){
+    Swal.fire('Completa la venta y el total válido','','warning');
+    return;
+  }
+
+  const fd = new FormData(f);
+  fd.set('idVenta', ventaId);   // 🔴 aseguramos idVenta
+  fd.set('idLote', loteId);     // 🔴 aseguramos idLote (opcional, si aplica)
+  fd.set('Total', String(total));
+
+  try {
+    const res  = await fetch('pagar_registrar.php', { method:'POST', body: fd });
+    const text = await res.text();
+    const data = parseServerJson(text);
+
+    if (res.ok && data && data.ok){
+      Swal.fire({icon:'success', title:'Pago registrado', timer:1400, showConfirmButton:false});
+      modalPagar.hide();
+      await cargarVentas();
+    } else {
+      Swal.fire({icon:'error', title:'No se pudo registrar', text:(data?.error || ('HTTP '+res.status))});
+    }
+  } catch(err){
+    Swal.fire({icon:'error', title:'Error', text:String(err).slice(0,280)});
+  }
+}
+
+    // Ver pagos de la venta
+    async function verPagosVenta(ventaId){
+      const body = document.getElementById('pagosVentaBody');
+      body.innerHTML = 'Cargando…';
+      try{
+        const res = await fetch('pagar_detalle.php', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ idVenta: ventaId, idDesarrollo: ID_DES })
+        });
+        const data = parseServerJson(await res.text());
+        if (!res.ok || !data || data.ok!==true) throw new Error(data?.error||('HTTP '+res.status));
+
+        const pagos = data.pagos||[];
+        const totalV = Number((VENTAS.find(v=>v.id===ventaId)||{}).total||0);
+        const abonado = pagos.reduce((a,p)=>a+Number(p.Total||0),0);
+        const resta   = Math.max(totalV - abonado, 0);
+
+        body.innerHTML = `
+          <div class="mb-2"><b>Contrato:</b> ${data.contrato||'—'}</div>
+          <div class="mb-2"><b>Total Venta:</b> ${money(totalV)} · <b>Abonado:</b> ${money(abonado)} · <b>Restante:</b> ${money(resta)}</div>
+          <div class="table-responsive">
+            <table class="table table-sm">
+              <thead class="table-light">
+                <tr>
+                  <th>Fecha</th><th>Forma</th><th>Estatus</th><th>Referencia</th><th class="text-end">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${pagos.map(p=>`
+                  <tr>
+                    <td>${p.FechaPago||'—'}</td>
+                    <td>${p.FormaPago||'—'}</td>
+                    <td>${p.Estatus||'—'}</td>
+                    <td class="text-truncate">${p.Referencia||'—'}</td>
+                    <td class="text-end">${money(p.Total||0)}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }catch(e){
+        body.innerHTML = `<div class="text-danger">No fue posible cargar el detalle. ${String(e).slice(0,180)}</div>`;
+      }
+      modalPagosV.show();
+    }
+
     // ====== Init ======
     document.addEventListener('DOMContentLoaded', () => {
       cargarVentas();
       document.getElementById('qVentas')?.addEventListener('input', renderVentas);
 
+      // NUEVO
       document.getElementById('btnNuevo')?.addEventListener('click', async () => {
         await cargarVentas();
         await cargarFuentes([]);
@@ -1027,28 +1165,25 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
         modalVenta.show();
       });
 
-      const selModalidad = document.getElementById('vf_modalidad');
-      const modalidadChoices = new Choices(selModalidad, { searchPlaceholderValue:'Buscar...', shouldSort:false, itemSelectText:'', removeItemButton:false, allowHTML:true });
-      const plan   = document.getElementById('vf_plan');
-      const cuotas = document.getElementById('vf_cuotas');
-      const inicio = document.getElementById('vf_inicio');
+      // PAGAR (sin selección, abre modal vacío con ventas a crédito)
+      document.getElementById('btnPagar')?.addEventListener('click', async ()=>{
+        if (!VENTAS.length) await cargarVentas();
+        openModalPagar('');
+      });
 
-      const syncDisabled = () => {
-        const disabled = !plan.checked;
-        selModalidad.disabled = disabled;
-        if (disabled) modalidadChoices.disable(); else modalidadChoices.enable();
-        cuotas.disabled = disabled; inicio.disabled = disabled;
-        recomputeFin();
-      };
-      plan.addEventListener('change', syncDisabled); syncDisabled();
-
-      selModalidad.addEventListener('change', recomputeFin);
-      cuotas.addEventListener('input',  recomputeFin);
-      inicio.addEventListener('change', recomputeFin);
-
+      // Guardar venta
       document.getElementById('vl_add')?.addEventListener('click', addLote);
       document.getElementById('btnGuardarVenta')?.addEventListener('click', guardarVenta);
-      // acciones de tabla (delegadas)
+
+      // Guardar pago
+      document.getElementById('btnGuardarPago')?.addEventListener('click', guardarPago);
+
+      // Cambio de venta en modal de pagar
+      document.getElementById('pg_venta')?.addEventListener('change', (e)=>{
+        buildLotesDeVentaEnPagar(e.target.value||'');
+      });
+
+      // Acciones por fila
       document.getElementById('tbVentas').addEventListener('click', (ev)=>{
         const btn = ev.target.closest('button[data-action]'); if (!btn) return;
         const id  = btn.dataset.id;
@@ -1057,8 +1192,38 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
         if (act==='edit')     abrirEditar(id);
         if (act==='del')      eliminarVenta(id);
         if (act==='contrato') generarContrato(id, 'docx');
+        if (act==='pagos')    verPagosVenta(id);
       });
+
+      // Config de plan (habilitar/deshabilitar)
+      const selModalidad = document.getElementById('vf_modalidad');
+      const modalidadChoices = new Choices(selModalidad, { searchPlaceholderValue:'Buscar...', shouldSort:false, itemSelectText:'', removeItemButton:false, allowHTML:true });
+      const plan   = document.getElementById('vf_plan');
+      const cuotas = document.getElementById('vf_cuotas');
+      const inicio = document.getElementById('vf_inicio');
+
+      const recomputeFin = ()=>{
+        const disabled = !plan.checked;
+        selModalidad.disabled = disabled;
+        if (disabled) modalidadChoices.disable(); else modalidadChoices.enable();
+        cuotas.disabled = disabled; inicio.disabled = disabled;
+
+        const mod  = selModalidad.value || '';
+        const n    = Number(cuotas.value || 0);
+        const iniS = inicio.value || '';
+        const finI = document.getElementById('vf_fin');
+        if (disabled || !mod || !n || !iniS){ finI.value=''; return; }
+        const base = parseDMY(iniS); if (!base){ finI.value=''; return; }
+        const fin = stepByModalidad(mod, base, n-1);
+        finI.value = toISO(fin);
+      };
+
+      plan.addEventListener('change', recomputeFin);
+      selModalidad.addEventListener('change', recomputeFin);
+      cuotas.addEventListener('input',  recomputeFin);
+      inicio.addEventListener('change', recomputeFin);
+      window.recomputeFin = recomputeFin; // para resetForm
     });
   </script>
 </body>
-</html>  
+</html>

@@ -25,7 +25,7 @@ function fb_bucket(): Bucket {
     if (!isset($json['project_id'])) {
         throw new RuntimeException('project_id no encontrado en firebase_credentials.json');
     }
-    $bucketName = $json['project_id'] . '.appspot.com';
+    $bucketName ='dmgvent.firebasestorage.app';
     return $storage->getBucket($bucketName);
 }
 // No cierres con "?>"
