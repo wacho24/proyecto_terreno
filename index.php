@@ -2,7 +2,7 @@
 session_start();
 
 // Si ya inició sesión → ir directo a proyectos
-if (!empty($_SESSION['idDesarrollo'])) {
+if (!empty($_SESSION['user_id'])) {
   header('Location: pages/proyectos.php');
   exit;
 }
@@ -99,7 +99,7 @@ unset($_SESSION['error_login'], $_SESSION['access_denied']);
     <h1 class="title-gradient">Bienvenido(a) a Landi</h1>
     <div class="login-sub small">Ingresa tus credenciales</div>
 
-    <!-- Form (no se toca backend) -->
+    <!-- Form -->
     <form method="POST" action="pages/procesar_login.php" id="formLogin" autocomplete="off">
       <div class="mb-3">
         <label class="form-label" for="email">Correo electrónico <span class="text-danger">*</span></label>

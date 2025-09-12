@@ -5,27 +5,26 @@ if (session_status() === PHP_SESSION_NONE) {
   session_start();
 }
 
-/* (opcional) valida login de usuario aquí si lo necesitas:
 if (empty($_SESSION['user_id'])) {
   header("Location: ../index.php");
   exit;
 }
-*/
 
-/* Importante: esta vista NO debe depender de idDesarrollo.
-   Limpiamos cualquier rastro que pueda “amarrar” la ruta. */
 unset($_SESSION['idDesarrollo'], $_SESSION['nodoActual'], $_SESSION['rutaNodo'], $_SESSION['empresaNodo']);
 
-// Evita cache para que siempre recargue la lista
 header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Pragma: no-cache");
+
+// === Datos de sesión ===
+$userEmpresarioId = (string)$_SESSION['user_id'];
+$COMPANY_ID = 'proj_8HNCM2DFob'; // ajusta si tienes multi-tenant
 ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Monte Alto</title>
+<title>Proyectos</title>
 <style>
   :root{
     --bg-1:#4b3b8f; --bg-2:#5a4aa6; --card:#ffffff; --ink:#2b2b2b; --ink-2:#6b6b6b;
@@ -42,14 +41,14 @@ header("Pragma: no-cache");
   .shell{ max-width:1280px; margin:0 auto; padding:24px; }
   .header{ display:flex; align-items:center; justify-content:space-between; gap:16px; background:#fff; border-radius:var(--radius); padding:12px 16px; box-shadow:var(--shadow); }
   .hdr-left{ display:flex; align-items:center; gap:12px; }
-  .brand-logo{ width:44px; height:44px; border-radius:10px; object-fit:contain; background:#f7f7fb; }
+  .brand-logo{ width:44px; height:44px; border-radius:10px; object-fit:cover; background:#f7f7fb; }
   .hdr-title{ display:flex; flex-direction:column; line-height:1.1; }
   .hdr-title h1{ margin:0; font-size:22px; letter-spacing:.5px; font-weight:700; color:#3a2f7a; }
   .hdr-title small{ margin-top:2px; color:var(--ink-2); font-weight:600; }
   .hdr-actions{ display:flex; align-items:center; gap:10px; }
   .icon-btn{ width:36px; height:36px; border:none; border-radius:10px; display:grid; place-items:center; background:var(--soft); cursor:pointer; }
   .icon{ width:20px; height:20px; display:block; fill:#6a6a80 }
-  .primary-btn{ height:36px; border:none; border-radius:10px; padding:0 12px; font-weight:800; cursor:pointer; background:var(--brand); color:#fff; box-shadow:var(--shadow); display:inline-flex; align-items:center; gap:8px; }
+  .primary-btn{ height:36px; border:none; border-radius:10px; padding:0 12px; font-weight:800; cursor:pointer; background:linear-gradient(90deg, var(--brand), var(--ok)); color:#fff; box-shadow:var(--shadow); display:inline-flex; align-items:center; gap:8px; }
   .primary-btn .icon{ fill:#fff }
 
   .toolbar{ margin-top:14px; background:rgba(255,255,255,.25); border:1px solid rgba(255,255,255,.35); backdrop-filter: blur(6px); border-radius:var(--radius); padding:14px; }
@@ -67,7 +66,7 @@ header("Pragma: no-cache");
 
   .card{ background:#fff; border-radius:18px; box-shadow:var(--shadow); overflow:hidden; display:flex; flex-direction:column; min-height:360px; }
   .card-media{ background:#fff; border-bottom:1px solid #f0eff8; display:grid; place-items:center; padding:12px; aspect-ratio:16/10; }
-  .card-media img{ width:100%; height:100%; object-fit:contain; }
+  .card-media img{ width:100%; height:100%; object-fit:cover; }
   .card-body{ padding:16px; display:flex; flex-direction:column; gap:10px; background:linear-gradient(180deg, #ffffff, #fafaff); }
   .proj-title{ font-weight:800; color:#2c2266; letter-spacing:.4px; font-size:18px; }
   .proj-sub{ color:#7c7c92; font-weight:600; margin-top:-2px; font-size:13px; }
@@ -78,6 +77,7 @@ header("Pragma: no-cache");
   .dot{ width:9px; height:9px; border-radius:99px; background:var(--brand); margin-top:7px; }
   .empty{ display:flex; align-items:center; justify-content:center; color:#fff; opacity:.9; padding:40px 0; }
 
+  /* ===== Modal estilo "bonito" original ===== */
   .modal-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; align-items:center; justify-content:center; padding:20px; z-index:50; }
   .modal{ width:100%; max-width:560px; background:#fff; border-radius:20px; box-shadow:var(--shadow); overflow:hidden; }
   .modal-header{ padding:14px 16px; border-bottom:1px solid #f0eff8; display:flex; align-items:center; justify-content:space-between; }
@@ -104,19 +104,16 @@ header("Pragma: no-cache");
   <div class="shell">
     <header class="header">
       <div class="hdr-left">
-        <img class="brand-logo" src="../assets/img/monte_alto.png" alt="Logo empresa">
+        <img id="empresaLogo" class="brand-logo" src="../assets/img/land_administration.jpg" alt="Logo empresa">
         <div class="hdr-title">
-          <h1>MONTE ALTO</h1>
-          <small>RFC: GUGX900726V20</small>
+          <h1 id="empresaTitulo">—</h1>
+          <small id="empresaSub">ID: <?php echo htmlspecialchars($userEmpresarioId); ?></small>
         </div>
       </div>
       <div class="hdr-actions">
         <button id="btnOpenCreate" class="primary-btn" title="Crear un nuevo proyecto">
           <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 11H13V5h-2v6H5v2h6v6h2v-6h6z"/></svg>
           Crear un nuevo proyecto
-        </button>
-        <button class="icon-btn" title="Modo oscuro">
-          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.79A9 9 0 0 1 11.21 3 7 7 0 1 0 21 12.79z"/></svg>
         </button>
         <a class="icon-btn" title="Salir" href="../index.php">
           <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l5-5-5-5v3H3v4h7v3zM20 3h-8v2h8v14h-8v2h8a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z"/></svg>
@@ -150,7 +147,7 @@ header("Pragma: no-cache");
     <div id="empty" class="empty" style="display:none;">No hay desarrollos para mostrar.</div>
   </div>
 
-  <!-- Modal Crear -->
+  <!-- Modal Crear (bonito) -->
   <div id="modalOverlay" class="modal-overlay" aria-hidden="true">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
       <div class="modal-header">
@@ -160,13 +157,7 @@ header("Pragma: no-cache");
         </button>
       </div>
       <form id="formCreate" class="modal-body" enctype="multipart/form-data">
-        <div class="field">
-          <label for="empresarioSel">Empresario</label>
-          <select id="empresarioSel" name="idEmpresario" required>
-            <option value="" selected>Selecciona…</option>
-          </select>
-          <div class="help">El desarrollo se guardará dentro del empresario seleccionado.</div>
-        </div>
+        <input type="hidden" name="idEmpresario" value="<?php echo htmlspecialchars($userEmpresarioId); ?>">
         <div class="field">
           <label for="nombreDesarrollo">Nombre del Desarrollo</label>
           <input type="text" id="nombreDesarrollo" name="NombreDesarrollo" placeholder="Ej. Torre Primavera" required />
@@ -197,30 +188,43 @@ header("Pragma: no-cache");
   <script type="module">
     import { database, onValue, ref as dbRef } from "../config/firebase_init.js";
 
-    // UI
+    // El DOM
+    const empresaLogoEl  = document.getElementById('empresaLogo');
+    const empresaTituloEl= document.getElementById('empresaTitulo');
+
     const cardsContainer = document.getElementById('cards');
-    const empty = document.getElementById('empty');
-
-    const filtroTxt = document.getElementById('filtroTxt');
+    const empty          = document.getElementById('empty');
+    const filtroTxt      = document.getElementById('filtroTxt');
     const buscarClienteTxt = document.getElementById('buscarClienteTxt');
-    const buscarBtn = document.getElementById('buscarBtn');
+    const buscarBtn      = document.getElementById('buscarBtn');
 
-    const btnOpenCreate = document.getElementById('btnOpenCreate');
-    const modalOverlay  = document.getElementById('modalOverlay');
-    const btnCloseModal = document.getElementById('btnCloseModal');
-    const btnCancel     = document.getElementById('btnCancel');
-    const formCreate    = document.getElementById('formCreate');
-    const fotoInput     = document.getElementById('fotoDesarrollo');
-    const previewBox    = document.getElementById('previewBox');
-    const previewImg    = document.getElementById('previewImg');
-    const toastEl       = document.getElementById('appToast');
-    const btnSave       = document.getElementById('btnSave');
-    const empresarioSel = document.getElementById('empresarioSel');
+    const btnOpenCreate  = document.getElementById('btnOpenCreate');
+    const modalOverlay   = document.getElementById('modalOverlay');
+    const btnCloseModal  = document.getElementById('btnCloseModal');
+    const btnCancel      = document.getElementById('btnCancel');
+    const formCreate     = document.getElementById('formCreate');
+    const fotoInput      = document.getElementById('fotoDesarrollo');
+    const previewBox     = document.getElementById('previewBox');
+    const previewImg     = document.getElementById('previewImg');
+    const toastEl        = document.getElementById('appToast');
+    const btnSave        = document.getElementById('btnSave');
 
-    // Cache local de datos
-    let allPairs = [];         // [ [keyProyecto, dataProyecto], ... ]
-    let empresariosIndex = {}; // { idEmpresario: {Nombre?: string} }
+    const COMPANY_ID = <?php echo json_encode($COMPANY_ID); ?>;
+    const USER_EMP_ID = <?php echo json_encode($userEmpresarioId); ?>;
 
+    // ---------- Cabecera dinámica (NombreEmpresario, FotoEmpresario)
+    const empMetaRef = dbRef(database, `projects/${COMPANY_ID}/data/DesarrollosEmpresarios/${USER_EMP_ID}`);
+    onValue(empMetaRef, (snap) => {
+      const v = snap.val() || {};
+      const nombre = v.NombreEmpresario || 'Mi Empresa';
+      const foto   = v.FotoEmpresario || '';
+      empresaTituloEl.textContent = nombre;
+      if (foto) {
+        empresaLogoEl.src = resolvePhotoUrl(foto);
+      }
+    });
+
+    // ---------- Modal
     function openModal(){
       modalOverlay.style.display='flex';
       modalOverlay.setAttribute('aria-hidden','false');
@@ -234,10 +238,9 @@ header("Pragma: no-cache");
     }
     function showToast(msg, type=''){
       toastEl.textContent = msg;
-      toastEl.className = 'toast show' + (type==='error'?' error':'');
+      toastEl.className = 'toast show' + (type==='error'?' error':'' );
       setTimeout(()=>toastEl.classList.remove('show'), 2600);
     }
-
     btnOpenCreate.addEventListener('click', openModal);
     btnCloseModal.addEventListener('click', closeModal);
     btnCancel.addEventListener('click', closeModal);
@@ -251,48 +254,20 @@ header("Pragma: no-cache");
       previewImg.src = URL.createObjectURL(f); previewBox.style.display='flex';
     });
 
-    // Carga de TODOS los desarrollos (flatten)
-    const basePath = `projects/proj_8HNCM2DFob/data/DesarrollosEmpresarios`;
-    const rootRef = dbRef(database, basePath);
+    // ---------- Datos: solo los desarrollos del empresario logueado
+    const devsRef = dbRef(database, `projects/${COMPANY_ID}/data/DesarrollosEmpresarios/${USER_EMP_ID}/Desarrollos`);
 
-    onValue(rootRef, (snap)=>{
-      const data = snap.val() || {};
-      // Construye índice de empresarios y lista plana de desarrollos
-      empresariosIndex = {};
-      allPairs = [];
-
-      for (const [empId, empNode] of Object.entries(data)) {
-        empresariosIndex[empId] = {
-          Nombre: empNode?.Nombre || ''
-        };
-        const devs = empNode?.Desarrollos || {};
-        for (const [devKey, devVal] of Object.entries(devs)) {
-          allPairs.push([devKey, { ...devVal, _empresario: empId }]);
-        }
-      }
-
-      // Poblar select de empresario (solo si aún no tiene opciones reales)
-      const currentValue = empresarioSel.value;
-      empresarioSel.innerHTML = `<option value="">Selecciona…</option>` +
-        Object.entries(empresariosIndex).map(([id, meta])=>{
-          const label = meta.Nombre ? meta.Nombre : `Empresario ${id.slice(-4)}`;
-          return `<option value="${id}">${label}</option>`;
-        }).join('');
-
-      if (Object.keys(empresariosIndex).length === 1) {
-        // Selecciona el único automáticamente
-        empresarioSel.value = Object.keys(empresariosIndex)[0];
-      } else if (Object.keys(empresariosIndex).includes(currentValue)) {
-        empresarioSel.value = currentValue;
-      }
-
-      renderDesarrollos(allPairs);
+    let allPairs = [];
+    onValue(devsRef, (snap)=>{
+      const devs = snap.val() || {};
+      allPairs = Object.entries(devs);
+      renderDesarrollos(aplicaFiltros(allPairs));
     }, (err)=>{
       empty.style.display='flex';
       empty.textContent = 'Error cargando datos: '+(err?.message||err);
     });
 
-    // Filtros simples en cliente
+    // Filtros cliente (se conservan)
     function normaliza(s){ return (s||'').toString().toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu,''); }
     function aplicaFiltros(pairs){
       const q1 = normaliza(filtroTxt.value);
@@ -309,18 +284,14 @@ header("Pragma: no-cache");
     filtroTxt.addEventListener('input', ()=>renderDesarrollos(aplicaFiltros(allPairs)));
     buscarBtn.addEventListener('click', ()=>renderDesarrollos(aplicaFiltros(allPairs)));
 
-    // Guardar (vía PHP/Kreait)
+    // ---------- Guardar (vía PHP/Kreait)
     formCreate.addEventListener('submit', async (e)=>{
       e.preventDefault();
-
-      const idEmp = empresarioSel.value.trim();
-      if (!idEmp) { showToast('Selecciona un empresario.', 'error'); return; }
-
       const fd = new FormData(formCreate);
-      fd.set('idEmpresario', idEmp); // se guarda dentro de ese nodo
+      // aseguramos idEmpresario correcto por si alguien toca el DOM
+      fd.set('idEmpresario', USER_EMP_ID);
 
       btnSave.disabled = true; btnSave.textContent = 'Guardando...';
-
       try {
         const resp = await fetch('crear_proyecto.php', { method:'POST', body: fd });
         const json = await resp.json();
@@ -329,19 +300,18 @@ header("Pragma: no-cache");
         }
         showToast('Proyecto creado');
         closeModal();
-        // La lista se actualizará sola por onValue
       } catch (err) {
-        console.error(err);
-        showToast('Error al guardar: '+err.message, 'error');
+        showToast('Error al guardar: '+(err?.message||err), 'error');
       } finally {
         btnSave.disabled = false; btnSave.textContent = 'Guardar';
       }
     });
 
+    // ---------- Helpers
     function resolvePhotoUrl(value) {
       if (!value) return '';
       if (/^https?:\/\//i.test(value)) return value;
-      const bucket = "dmgvent.appspot.com";
+      const bucket = "dmgvent.appspot.com"; // tu bucket
       const path = encodeURIComponent(value);
       return `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${path}?alt=media`;
     }
@@ -352,7 +322,7 @@ header("Pragma: no-cache");
       empty.style.display='none';
 
       for(const [key, item] of pairs){
-        const foto = resolvePhotoUrl(item.FotoDesarrollo);
+        const foto = resolvePhotoUrl(item.FotoDesarrollo) || '../assets/img/placeholder.png';
         const nombre = item.NombreDesarrollo || '—';
         const direccion = item.Direccion || '—';
 
@@ -375,10 +345,7 @@ header("Pragma: no-cache");
               <div class="stat"><span class="dot"></span> <span>Clave: <strong>${key}</strong></span></div>
             </div>
           </div>`;
-        card.querySelector('.btn').addEventListener('click', ()=>{
-          // Ir al dashboard del proyecto
-          location.href = `dashboard.php?id=${encodeURIComponent(key)}`;
-        });
+        card.querySelector('.btn').addEventListener('click', ()=>{ location.href = `dashboard.php?id=${encodeURIComponent(key)}`; });
         cardsContainer.appendChild(card);
       }
     }

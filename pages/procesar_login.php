@@ -1,94 +1,109 @@
 <?php
 // pages/procesar_login.php
 declare(strict_types=1);
+
 session_start();
 
-$DEBUG = false; // <- ponlo en true solo para pruebas
+$DEBUG = false;                                // pon true para ver detalles en index.php
+const DEFAULT_COMPANY_ID = 'proj_8HNCM2DFob';  // <-- tu company/tenant
+
+function back_with_error(string $msg): void {
+  $_SESSION['error_login'] = $msg;
+  header('Location: ../index.php');
+  exit;
+}
 
 try {
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        throw new RuntimeException('Método no permitido.');
-    }
+  if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+    throw new RuntimeException('Método no permitido.');
+  }
 
-    $email    = isset($_POST['email']) ? trim((string)$_POST['email']) : '';
-    $password = isset($_POST['password']) ? (string)$_POST['password'] : '';
+  $emailOrId = trim((string)($_POST['email'] ?? ''));
+  $password  = (string)($_POST['password'] ?? '');
 
-    if ($email === '' || $password === '') {
-        throw new InvalidArgumentException('Debes ingresar correo y contraseña.');
-    }
+  if ($emailOrId === '' || $password === '') {
+    throw new InvalidArgumentException('Debes ingresar correo/ID y contraseña.');
+  }
 
-    require_once __DIR__ . '/../config/firebase_init.php';
-    /** @var \Kreait\Firebase\Auth $auth */
-    /** @var \Kreait\Firebase\Database $database */
+  require_once __DIR__ . '/../config/firebase_init.php';
+  /** @var \Kreait\Firebase\Auth $auth */
+  /** @var \Kreait\Firebase\Database $database */
 
-    // === 1) AUTH: email/clave ===
-    $signInResult = $auth->signInWithEmailAndPassword($email, $password);
+  // ---------- MODO A: AUTH NORMAL (email + password) ----------
+  try {
+    $signInResult = $auth->signInWithEmailAndPassword($emailOrId, $password);
     $uid = $signInResult->firebaseUserId();
     if (!$uid) {
-        throw new RuntimeException('No se pudo obtener el UID del usuario.');
+      throw new RuntimeException('No se pudo obtener el UID del usuario.');
     }
 
-    // (Opcional) Exigir email verificado:
-    // $userRecord = $auth->getUser($uid);
-    // if (!$userRecord->emailVerified) {
-    //     throw new RuntimeException('Debes verificar tu correo electrónico antes de continuar.');
-    // }
-
-    // === 2) VALIDACIÓN SOLICITADA: idEmpresario ===
-    $path = "projects/proj_8HNCM2DFob/data/DesarrollosEmpresarios/{$uid}/idEmpresario";
-    $idEmpresario = $database->getReference($path)->getValue();
+    $companyId = DEFAULT_COMPANY_ID;
+    $empPath   = "projects/{$companyId}/data/DesarrollosEmpresarios/{$uid}";
+    $empSnap   = $database->getReference($empPath)->getSnapshot();
 
     if ($DEBUG) {
-        // Solo para debug local: ver lo que hay
-        $_SESSION['error_login'] = "DEBUG → UID: {$uid} | idEmpresario leído: ".var_export($idEmpresario, true);
-        header('Location: ../index.php'); exit;
+      $_SESSION['error_login'] =
+        "DEBUG AUTH OK\n".
+        "UID = {$uid}\n".
+        "Ruta = {$empPath}\n".
+        "Existe = ".($empSnap->exists() ? 'sí' : 'no')."\n".
+        "Valor = ".var_export($empSnap->getValue(), true);
+      header('Location: ../index.php'); exit;
     }
 
-    if (empty($idEmpresario)) {
-        $_SESSION['access_denied'] = 'No estás registrado como Empresario en el sistema.';
-        header('Location: ../index.php'); exit;
+    if (!$empSnap->exists()) {
+      back_with_error('Tu cuenta no está registrada como Empresario en el sistema.');
     }
 
-    if ((string)$idEmpresario !== (string)$uid) {
-        $_SESSION['access_denied'] = 'Tu cuenta no está vinculada correctamente (idEmpresario no coincide).';
-        header('Location: ../index.php'); exit;
-    }
+    // Sesión mínima: rol viewer y acceso a su propio empresario
+    $_SESSION['user_id']             = $uid;
+    $_SESSION['email']               = strtolower($emailOrId);
+    $_SESSION['nombre']              = (string)($empSnap->getValue()['NombreEmpresario'] ?? '');
+    $_SESSION['rol']                 = 'viewer';
+    $_SESSION['allowed_empresarios'] = [$uid];
+    $_SESSION['allowed_projects']    = []; // si luego quieres limitar por proyectos, aquí
+    $_SESSION['company_id']          = $companyId;
 
-    // === 3) PASO: sesión y redirección ===
-    $_SESSION['idDesarrollo'] = $uid;  // usas esto como flag
-    $_SESSION['email']        = $email;
+    unset($_SESSION['idDesarrollo']);
 
     header('Location: proyectos.php'); exit;
 
-} catch (\Kreait\Firebase\Auth\SignIn\FailedToSignIn $e) {
-    // Decodificar mensaje de Firebase para mostrar causa real
-    $msg = 'Credenciales inválidas. Verifica tu correo y contraseña.'; // fallback
-    try {
-        $errors = method_exists($e, 'errors') ? $e->errors() : [];
-        $code = $errors['error']['message'] ?? '';
-        // Mapear códigos comunes
-        switch ($code) {
-            case 'EMAIL_NOT_FOUND':
-            case 'USER_NOT_FOUND':
-                $msg = 'El correo no está registrado.';
-                break;
-            case 'INVALID_PASSWORD':
-                $msg = 'La contraseña es incorrecta.';
-                break;
-            case 'USER_DISABLED':
-                $msg = 'Tu usuario está deshabilitado.';
-                break;
-            case 'TOO_MANY_ATTEMPTS_TRY_LATER':
-                $msg = 'Demasiados intentos. Inténtalo más tarde.';
-                break;
-            default:
-                if (!empty($code)) { $msg = "Error de autenticación: {$code}"; }
-        }
-    } catch (\Throwable $x) {}
-    $_SESSION['error_login'] = $msg;
-    header('Location: ../index.php'); exit;
+  } catch (\Kreait\Firebase\Auth\SignIn\FailedToSignIn $authError) {
+    // ---------- MODO B: FALLBACK POR ID (sin Auth) ----------
+    $enteredId = $emailOrId; // el usuario puede escribir su idEmpresario aquí
+    $companyId = DEFAULT_COMPANY_ID;
+
+    $empPath = "projects/{$companyId}/data/DesarrollosEmpresarios/{$enteredId}";
+    $empSnap = $database->getReference($empPath)->getSnapshot();
+
+    if ($DEBUG) {
+      $_SESSION['error_login'] =
+        "DEBUG ID MODE\n".
+        "ID ingresado = {$enteredId}\n".
+        "Ruta = {$empPath}\n".
+        "Existe = ".($empSnap->exists() ? 'sí' : 'no')."\n".
+        "Valor = ".var_export($empSnap->getValue(), true);
+      header('Location: ../index.php'); exit;
+    }
+
+    if (!$empSnap->exists()) {
+      back_with_error('Credenciales inválidas. Verifica tu correo, contraseña o tu ID de Empresario.');
+    }
+
+    // Sesión con ese ID (viewer)
+    $_SESSION['user_id']             = $enteredId;
+    $_SESSION['email']               = '';
+    $_SESSION['nombre']              = (string)($empSnap->getValue()['NombreEmpresario'] ?? '');
+    $_SESSION['rol']                 = 'viewer';
+    $_SESSION['allowed_empresarios'] = [$enteredId];
+    $_SESSION['allowed_projects']    = [];
+    $_SESSION['company_id']          = $companyId;
+
+    unset($_SESSION['idDesarrollo']);
+
+    header('Location: proyectos.php'); exit;
+  }
 
 } catch (\Throwable $e) {
-    $_SESSION['error_login'] = $e->getMessage();
-    header('Location: ../index.php'); exit;
+  back_with_error('Error en el inicio de sesión: '.$e->getMessage());
 }
