@@ -3,6 +3,37 @@
 declare(strict_types=1);
 header('Content-Type: application/json; charset=utf-8');
 
+// ===== (nuevo) sesión y Firebase para resolver FotoDesarrollo si viene vacío =====
+if (session_status() === PHP_SESSION_NONE) { session_start(); }
+require_once __DIR__ . '/../config/firebase_init.php';
+$ROOT_PREFIX = 'projects/proj_8HNCM2DFob/data';
+
+// Helpers extra (no invasivos) para la foto
+function __pickStorageUrl($val): string {
+  if (is_string($val) && $val!=='') return $val;
+  if (is_array($val)) {
+    if (!empty($val['downloadUrl'])) return (string)$val['downloadUrl'];
+    if (!empty($val['url']))         return (string)$val['url'];
+  }
+  return '';
+}
+function __getFotoDesarrolloExact($db, string $root, string $idEmpresario, string $idDesarrollo): string {
+  $paths = [
+    "$root/DesarrollosEmpresarios/$idEmpresario/Desarrollos/$idDesarrollo/FotoDesarrollo",
+    "$root/DesarrollosGenerales/$idDesarrollo/FotoDesarrollo",
+    "$root/Desarrollos/$idDesarrollo/FotoDesarrollo",
+  ];
+  foreach ($paths as $p) {
+    try {
+      $snap = $db->getReference($p)->getSnapshot();
+      if (!$snap->exists()) continue;
+      $url = __pickStorageUrl($snap->getValue());
+      if ($url !== '') return $url;
+    } catch (Throwable $e) { /* seguir */ }
+  }
+  return '';
+}
+
 /**
  * CONFIG: URL del Webhook de Apphive
  */
@@ -11,7 +42,8 @@ const APPHIVE_WEBHOOK_URL = 'https://editor.apphive.io/hook/ccp_pipgTradYMfgDRjR
 /**
  * Enviar SOLO las primeras N fechas de pago
  */
-const FECHAS_PAGO_LIMIT = 1;
+const FECHAS_PAGO_LIMIT = 0;
+
 
 /* ===================== Helpers ===================== */
 function jres(array $d, int $code = 200): void {
@@ -82,6 +114,8 @@ $Detalles = [
   'FechaInicio'        => s($D['FechaInicio']        ?? $in['FechaInicio']        ?? '' ),
   'FechaVenta'         => s($D['FechaVenta']         ?? $in['FechaVenta']         ?? '' ),
   'ModalidadPagos'     => s($D['ModalidadPagos']     ?? $in['ModalidadPagos']     ?? '' ),
+  'MetodoPago'         => s($D['MetodoPago']         ?? $in['MetodoPago']         ?? '' ),
+  'TipoVenta'          => s($D['TipoVenta']          ?? $in['TipoVenta']          ?? '' ), // ✅ NUEVO: incluir TipoVenta
 ];
 
 /* ---- Cliente (idCliente en Base64) ---- */
@@ -135,6 +169,23 @@ $payload = [
   'Cliente'        => $Cliente,           // idCliente en Base64
   'FechasPago'     => (object)$FechasPago,
 ];
+
+/* ===== (nuevo) completar FotoDesarrollo si viene vacío ===== */
+try {
+  $fotoActual = (string)($payload['Lote']['FotoDesarrollo'] ?? '');
+  if ($fotoActual === '') {
+    $idDes = (string)($payload['ids']['idDesarrollo'] ?? ($_SESSION['idDesarrollo'] ?? ''));
+    $idEmp = (string)($_SESSION['user_id'] ?? '');
+    if ($idDes !== '') {
+      $foto = __getFotoDesarrolloExact($database, $ROOT_PREFIX, $idEmp, $idDes);
+      if ($foto !== '') {
+        $payload['Lote']['FotoDesarrollo'] = $foto;
+      }
+    }
+  }
+} catch (Throwable $e) {
+  // No interrumpimos el flujo si falla; simplemente se enviará vacío.
+}
 
 /* ===================== Envío a Apphive (cURL) ===================== */
 try {

@@ -90,35 +90,22 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
     .input-group-text{ border-radius:12px; }
     .swal2-popup{ border-radius:18px; padding:1.2rem 1.2rem 1rem; }
 
-    /* === Choices: ancho del contenedor dentro de input-group === */
-.input-group > .choices { 
-  flex: 1 1 auto;                 /* que ocupe todo el ancho del input-group */
-  min-width: 0;                   /* evita desbordes */
-}
+    /* Choices ancho */
+    .input-group > .choices { flex: 1 1 auto; min-width: 0; }
+    #vd_cliente + .choices,
+    #vl_select + .choices,
+    #vf_cuenta_sel + .choices { width: 100% !important; }
+    #vd_cliente + .choices .choices__list--dropdown,
+    #vl_select + .choices .choices__list--dropdown,
+    #vf_cuenta_sel + .choices .choices__list--dropdown {
+      min-width: 420px !important; white-space: nowrap; overflow-x: hidden;
+    }
+    #vd_cliente + .choices .choices__list--dropdown .choices__item,
+    #vl_select + .choices .choices__list--dropdown .choices__item,
+    #vf_cuenta_sel + .choices .choices__list--dropdown .choices__item { white-space: nowrap; }
 
-/* === Haz más anchos los dropdowns de los selects con Choices === */
-#vd_cliente + .choices,
-#vl_select + .choices,
-#vf_cuenta_sel + .choices {
-  width: 100% !important;         /* que el control se vea del ancho del input */
-}
-
-/* El menú desplegable: más ancho y sin saltos raros */
-#vd_cliente + .choices .choices__list--dropdown,
-#vl_select + .choices .choices__list--dropdown,
-#vf_cuenta_sel + .choices .choices__list--dropdown {
-  min-width: 420px !important;    /* ajusta a gusto: 420–520px suele ir bien */
-  white-space: nowrap;            /* evita que parta el texto en varias líneas */
-  overflow-x: hidden;             /* oculta overflow horizontal si aplica */
-}
-
-/* Las opciones dentro del menú: mantener en una línea */
-#vd_cliente + .choices .choices__list--dropdown .choices__item,
-#vl_select + .choices .choices__list--dropdown .choices__item,
-#vf_cuenta_sel + .choices .choices__list--dropdown .choices__item {
-  white-space: nowrap;
-}
-
+    /* Opcional: hacer más visibles los íconos de acciones */
+    .btn-group .btn i { font-size: 14px; line-height: 1; }
   </style>
 </head>
 <body class="g-sidenav-show bg-gray-100">
@@ -136,9 +123,7 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
           </div>
 
           <div class="ms-auto d-flex align-items-center gap-2">
-            <!-- NUEVO (sin +) -->
             <button type="button" id="btnNuevo" class="btn btn-sm btn-gradient">Nuevo</button>
-            <!-- PAGAR -->
             <button type="button" id="btnPagar" class="btn btn-sm btn-emerald">Pagar</button>
 
             <div class="search-wrap ms-2">
@@ -308,20 +293,20 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
                 <div class="col-md-9">
                   <div class="row g-3">
                     <div class="col-12">
-                      <label class="form-label fw-semibold">Monto Total Enganche ($) <span class="text-danger">*</span></label>
+                      <label class="form-label fw-semibold">Monto Total ($) <span class="text-danger">*</span></label>
                       <input type="text" inputmode="decimal" class="form-control" id="vf_enganche">
                     </div>
 
                     <div class="col-12">
                       <div class="form-check form-switch">
                         <input class="form-check-input" type="checkbox" id="vf_plan">
-                        <label class="form-check-label" for="vf_plan">Crear un Plan de Pagos del Enganche</label>
+                        <label class="form-check-label" for="vf_plan">Crear  Plan de Pagos</label>
                       </div>
                     </div>
 
                     <div class="col-12">
                       <hr>
-                      <label class="form-label fw-semibold">Modalidad del Enganche</label>
+                      <label class="form-label fw-semibold">Modalidad de pago</label>
                       <select class="form-select" id="vf_modalidad" disabled>
                         <option value="">Seleccione...</option>
                         <option value="SEMANAL">SEMANAL</option>
@@ -335,6 +320,21 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
                       </select>
                     </div>
 
+                    <!-- MÉTODO DE PAGO (ENGANCHE) -->
+                    <div class="col-12">
+                      <label class="form-label fw-semibold">Método de Pago</label>
+                      <select class="form-select" id="vf_metodo">
+                        <option value="">Seleccione...</option>
+                        <option value="EFECTIVO">EFECTIVO</option>
+                        <option value="TRANSFERENCIA">TRANSFERENCIA</option>
+                        <option value="TARJETA">TARJETA</option>
+                        <option value="DEPÓSITO">DEPÓSITO</option>
+                        <option value="CHEQUE">CHEQUE</option>
+                        <option value="OTRO">OTRO</option>
+                      </select>
+                      <div class="small-note mt-1">Se enviará en <b>Detalles/DetallesVenta.MetodoPago</b> al Webhook.</div>
+                    </div>
+
                     <div class="col-md-6">
                       <label class="form-label fw-semibold">Cantidad de Pagos</label>
                       <input type="number" class="form-control" id="vf_cuotas" disabled placeholder="###">
@@ -343,6 +343,12 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
                     <div class="col-md-6">
                       <label class="form-label fw-semibold">Fecha de Inicio</label>
                       <input type="date" class="form-control" id="vf_inicio" disabled>
+                    </div>
+
+                    <!-- Monto por cuota (calculado) -->
+                    <div class="col-md-6">
+                      <label class="form-label fw-semibold">Monto por Cuota (calculado)</label>
+                      <input type="text" class="form-control" id="vf_montocuota" readonly value="0.00">
                     </div>
 
                     <!-- Cuenta (Select) -->
@@ -460,7 +466,7 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
       <div class="modal-content">
         <div class="modal-header">
-          <h6 class="modal-title"><i class="fa-regular fa-eye me-2"></i> Pagos de la Venta</h6>
+          <h6 class="modal-title"><i class="fa-solid fa-eye me-2"></i> Pagos de la Venta</h6>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
         </div>
         <div class="modal-body">
@@ -526,37 +532,21 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 
     function addMonths(d,n){ const x=new Date(d.getTime()); const day=x.getDate(); x.setMonth(x.getMonth()+n); if(x.getDate()<day) x.setDate(0); return x; }
     function addDays(d,n){ const x=new Date(d.getTime()); x.setDate(x.getDate()+n); return x; }
-    function stepByModalidad(mod, base, steps){
-      const M = String(mod||'').toUpperCase();
-      const map = {
-        'SEMANAL':   (d,k)=>addDays(d, 7*k),
-        'QUINCENAL': (d,k)=>addDays(d, 15*k),
-        'MENSUAL':   (d,k)=>addMonths(d, 1*k),
-        'BIMESTRAL': (d,k)=>addMonths(d, 2*k),
-        'TRIMESTRAL':(d,k)=>addMonths(d, 3*k),
-        'CUATRIMESTRAL':(d,k)=>addMonths(d, 4*k),
-        'SEMESTRAL': (d,k)=>addMonths(d, 6*k),
-        'ANUAL':     (d,k)=>addMonths(d,12*k),
-      };
-      const fn = map[M] || map['MENSUAL'];
-      return fn(base, steps);
-    }
 
-function estadoBadge(tipo, estatusDb) {
-  const t  = String(tipo||'').toUpperCase();
-  const st = String(estatusDb||'').toUpperCase();
-  // Si la DB ya dice LIQUIDADO, manda LIQUIDADO sin importar el tipo
-  const esLiquidado = st === 'LIQUIDADO' || t.includes('CONTADO');
-  return `<span class="badge-estado ${esLiquidado?'st-liq':'st-pend'}">
+    function estadoBadge(tipo, estatusDb) {
+      const t  = String(tipo||'').toUpperCase();
+      const st = String(estatusDb||'').toUpperCase();
+      const esLiquidado = st === 'LIQUIDADO' || t.includes('CONTADO');
+      return `<span class="badge-estado ${esLiquidado?'st-liq':'st-pend'}">
             ${esLiquidado?'LIQUIDADO':'PENDIENTE'}
           </span>`;
-}
-
-
+    }
 
     // ====== Estado ======
     let LOADED=false;
     let LISTA_CLIENTES=[], LISTA_LOTES=[], LISTA_CUENTAS=[];
+    let FOTO_DESARROLLO = '';
+
     const CARRITO = [];
     const MAP_LOTES = {}, MAP_CLIENTES = {};
     const MAP_LOTES_BY_LABEL = {};
@@ -596,16 +586,16 @@ function estadoBadge(tipo, estatusDb) {
           <td class="text-center">
             <div class="btn-group">
               <button class="btn btn-sm btn-outline-secondary" title="Ver" data-action="ver" data-id="${v.id}">
-                <i class="fa-regular fa-eye"></i>
+                <i class="fa-solid fa-eye"></i>
               </button>
               <button class="btn btn-sm btn-outline-primary" title="Editar" data-action="edit" data-id="${v.id}">
-                <i class="fa-regular fa-pen-to-square"></i>
+                <i class="fa-solid fa-pen-to-square"></i>
               </button>
               <button class="btn btn-sm btn-outline-danger" title="Eliminar" data-action="del" data-id="${v.id}">
-                <i class="fa-regular fa-trash-can"></i>
+                <i class="fa-solid fa-trash"></i>
               </button>
               <button class="btn btn-sm btn-outline-warning" title="Contrato" data-action="contrato" data-id="${v.id}">
-                <i class="fa-regular fa-file-lines"></i>
+                <i class="fa-solid fa-file-lines"></i>
               </button>
               <button class="btn btn-sm btn-outline-success" title="Pagos" data-action="pagos" data-id="${v.id}">
                 <i class="fa-solid fa-coins"></i>
@@ -683,27 +673,19 @@ function estadoBadge(tipo, estatusDb) {
       selLot.value = '';
       try { choicesLotes.removeActiveItems(); } catch {}
     }
- // --- Prefill del precio cuando se elige un lote ---
-function setPrecioDesdeLote(loteId){
-  const inPrecio = document.getElementById('vl_precio');
-  if (!inPrecio) return;
+    function setPrecioDesdeLote(loteId){
+      const inPrecio = document.getElementById('vl_precio');
+      if (!inPrecio) return;
+      const lot = MAP_LOTES[String(loteId)] || null;
+      if (!lot) { inPrecio.value = ''; return; }
+      const raw = lot.precio ?? lot.pventa ?? lot.Precio ?? lot.PrecioVenta ?? 0;
+      inPrecio.value = Number(raw || 0);
+    }
+    document.getElementById('vl_select')?.addEventListener('change', (e)=>{
+      setPrecioDesdeLote(e.target.value);
+    });
 
-  const lot = MAP_LOTES[String(loteId)] || null;
-  if (!lot) { inPrecio.value = ''; return; }
-
-  // Busca el campo correcto de precio
-  const raw =
-    lot.precio ?? lot.pventa ?? lot.Precio ?? lot.PrecioVenta ?? 0;
-
-  inPrecio.value = Number(raw || 0);
-}
-
-// Evento: cuando elijo un lote en el select
-document.getElementById('vl_select')?.addEventListener('change', (e)=>{
-  setPrecioDesdeLote(e.target.value);
-});
-
-    // ====== Cargar catálogos (Clientes/Lotes) ======
+    // ====== Cargar catálogos ======
     async function cargarFuentes(allowLotIds = []) {
       if (!LOADED) {
         const res = await fetch('ventas_sources.php?id=' + encodeURIComponent(ID_DES), { cache:'no-store' });
@@ -712,10 +694,24 @@ document.getElementById('vl_select')?.addEventListener('change', (e)=>{
         if (!res.ok || !data || data.ok !== true) throw new Error((data && data.error) || ('HTTP '+res.status));
         LISTA_CLIENTES = data.clientes || [];
         LISTA_LOTES    = data.lotes    || [];
+        FOTO_DESARROLLO =
+          data.fotoDesarrollo ||
+          (data.desarrollo && (data.desarrollo.FotoDesarrollo || data.desarrollo.fotoDesarrollo)) ||
+          '';
         LISTA_LOTES.forEach(l => {
-          MAP_LOTES[l.id] = l;
-          MAP_LOTES_BY_LABEL[norm(l.label || l.id)] = l.id;
+          const id    = String(l.id || '');
+          const label = l.label || id;
+          const idManzana =
+            l.idManzana ?? l.IdManzana ?? l.id_manzana ??
+            l.manzanaId ?? l.ManzanaId ?? l.Manzana ?? '';
+          const precio =
+            l.precio ?? l.pventa ?? l.Precio ?? l.PrecioVenta ?? 0;
+          const foto =
+            l.foto ?? l.Foto ?? l.FotoDesarrollo ?? '';
+          MAP_LOTES[id] = { ...l, id, label, idManzana, precio, foto };
+          MAP_LOTES_BY_LABEL[norm(label)] = id;
         });
+
         LISTA_CLIENTES.forEach(c => MAP_CLIENTES[c.id] = c);
         LOADED = true;
       }
@@ -780,6 +776,10 @@ document.getElementById('vl_select')?.addEventListener('change', (e)=>{
       syncHidden();
     }
 
+    // ====== Totales / carrito ======
+    function totalVentaActual(){
+      return CARRITO.reduce((a,it)=>a+Number(it.precio||0),0);
+    }
     function renderCarrito(){
       const tb = document.getElementById('vl_tbody');
       tb.innerHTML = '';
@@ -798,6 +798,7 @@ document.getElementById('vl_select')?.addEventListener('change', (e)=>{
         tb.appendChild(tr);
       });
       document.getElementById('vl_total').textContent = money(total);
+      computeCuota(); // recalcula monto por cuota cada vez que cambia el carrito
     }
 
     function resetForm(){
@@ -829,206 +830,267 @@ document.getElementById('vl_select')?.addEventListener('change', (e)=>{
       const del = ev.target.closest('#vl_tbody button[data-ix]');
       if (del) { const ix = +del.dataset.ix; if (ix>=0 && ix < CARRITO.length) { CARRITO.splice(ix,1); renderCarrito(); } }
     });
-// === WEBHOOK APPHIVE ===
-function buildFechasPago(modalidad, cuotas, inicioISO, montoPorCuota){
-  const out = {};
-  const n = Number(cuotas||0);
-  if (!modalidad || !n || !inicioISO) return out;
-  let base = new Date(inicioISO + 'T00:00:00');
 
-  for (let i=0; i<n; i++){
-    let f;
-    switch((modalidad||'').toUpperCase()){
-      case 'SEMANAL':        f = addDays(base, 7*i); break;
-      case 'QUINCENAL':      f = addDays(base, 15*i); break;
-      case 'MENSUAL':        f = addMonths(base, 1*i); break;
-      case 'BIMESTRAL':      f = addMonths(base, 2*i); break;
-      case 'TRIMESTRAL':     f = addMonths(base, 3*i); break;
-      case 'CUATRIMESTRAL':  f = addMonths(base, 4*i); break;
-      case 'SEMESTRAL':      f = addMonths(base, 6*i); break;
-      case 'ANUAL':          f = addMonths(base,12*i); break;
-      default:               f = addMonths(base, 1*i);
+    // ====== Plan / cuotas ======
+    function isContado(){
+      return String(document.getElementById('vd_tipo')?.value||'').toUpperCase().includes('CONTADO');
     }
-    const key = toISO(f);
-    out[key] = { Fecha: key, Monto: Number(montoPorCuota||0) };
-  }
-  return out;
-}
+    function computeCuota(){
+      const plan = !!document.getElementById('vf_plan')?.checked;
+      const cuotas = Number(document.getElementById('vf_cuotas')?.value||0);
+      const enganche = normalizeMoney(document.getElementById('vf_enganche')?.value||0);
+      const totalV = totalVentaActual();
+      const restante = Math.max(totalV - enganche, 0);
+      const puede = plan && !isContado() && cuotas>0;
+      const monto = puede ? (restante / cuotas) : 0;
+      const out = document.getElementById('vf_montocuota');
+      if (out) out.value = monto.toFixed(2);
+    }
+    function togglePlanByTipo(){
+      const contado = isContado();
+      const sw = document.getElementById('vf_plan');
+      const selModalidad = document.getElementById('vf_modalidad');
+      const cuotas = document.getElementById('vf_cuotas');
+      const inicio = document.getElementById('vf_inicio');
+      const fin    = document.getElementById('vf_fin');
 
-// Construye el payload EXACTO para Apphive
-function buildWebhookPayload({ idVenta, idDesarrollo, clienteId, clienteLabel, lotes, fechaVentaISO }){
-  // Lote a enviar: si hay varios, Apphive espera un objeto; tomamos el primero.
-  const lot0 = (lotes && lotes[0]) ? lotes[0] : {};
+      // Si es contado, forzar OFF y deshabilitar
+      if (contado){
+        sw.checked = false;
+        sw.disabled = true;
+      } else {
+        sw.disabled = false;
+      }
+      // Recalcular habilitados por el switch y por contado
+      const activo = !contado && sw.checked;
+      selModalidad.disabled = !activo;
+      cuotas.disabled       = !activo;
+      inicio.disabled       = !activo;
+      if (!activo){ fin.value = ''; }
 
-  // Cuenta bancaria (desde el select de cuentas)
-  const cuentaSel = document.getElementById('vf_cuenta_sel');
-  const ctaId  = (cuentaSel?.value||'').trim();
-  const hidden = document.getElementById('vf_cuenta');
-  const ctaStr = (hidden?.value||'').trim(); // "Banco — Beneficiario — CLABE"
-  const [banco='', beneficiario='', clabe=''] = ctaStr.split('—').map(s=>String(s||'').trim());
+      computeCuota();
+    }
 
-  // Detalles del enganche / plan
-  const plan       = !!document.getElementById('vf_plan')?.checked;
-  const enganche   = normalizeMoney(document.getElementById('vf_enganche')?.value||0);
-  const modalidad  = document.getElementById('vf_modalidad')?.value || '';
-  const cuotas     = Number(document.getElementById('vf_cuotas')?.value||0);
-  const inicioISO  = document.getElementById('vf_inicio')?.value || '';
-  const finISO     = document.getElementById('vf_fin')?.value || '';
-  const montoPorCuota = plan && cuotas>0 ? (enganche / cuotas) : 0;
+    // === WEBHOOK APPHIVE ===
+    function buildFechasPago(modalidad, cuotas, inicioISO, montoPorCuota){
+      const out = {};
+      const n = Number(cuotas||0);
+      if (!modalidad || !n || !inicioISO) return out;
+      const base = new Date(inicioISO + 'T00:00:00');
+      const stepByMod = (k)=>{
+        switch((modalidad||'').toUpperCase()){
+          case 'SEMANAL':        return addDays(base, 7*k);
+          case 'QUINCENAL':      return addDays(base, 15*k);
+          case 'MENSUAL':        return addMonths(base, 1*k);
+          case 'BIMESTRAL':      return addMonths(base, 2*k);
+          case 'TRIMESTRAL':     return addMonths(base, 3*k);
+          case 'CUATRIMESTRAL':  return addMonths(base, 4*k);
+          case 'SEMESTRAL':      return addMonths(base, 6*k);
+          case 'ANUAL':          return addMonths(base,12*k);
+          default:               return addMonths(base, 1*k);
+        }
+      };
+      for (let i=0; i<n; i++){
+        const f = stepByMod(i);
+        const key = toISO(f);
+        out[key] = { Fecha: key, Monto: Number(montoPorCuota||0) };
+      }
+      return out;
+    }
 
-  const FechasPago = plan
-    ? buildFechasPago(modalidad, cuotas, inicioISO, montoPorCuota)
-    : {}; // si no hay plan, lo mandamos vacío
+    function buildWebhookPayload({ idVenta, idDesarrollo, clienteId, clienteLabel, lotes, fechaVentaISO }){
+      const lot0 = (lotes && lotes[0]) ? lotes[0] : {};
+      const lotInfo = MAP_LOTES[String(lot0.id||'')] || {};
 
-  // Vendedor: saco lo que ya tienes en sesión (email/uid)
-  const vendedorId   = ASESOR_UID || ASESOR_EMAIL || '';
-  const vendedorName = ASESOR_EMAIL || 'Usuario actual';
+      const cuentaSel = document.getElementById('vf_cuenta_sel');
+      const ctaId  = (cuentaSel?.value||'').trim();
+      const hidden = document.getElementById('vf_cuenta');
+      const ctaStr = (hidden?.value||'').trim();
+      const [banco='', beneficiario='', clabe=''] = ctaStr.split('—').map(s=>String(s||'').trim());
 
-  // Foto de desarrollo si la tienes en tu catálogo de lotes
-  const foto = (MAP_LOTES[lot0.id]?.foto || MAP_LOTES[lot0.id]?.FotoDesarrollo || '');
+      // Plan / Enganche
+      let plan         = !!document.getElementById('vf_plan')?.checked;
+      const enganche   = normalizeMoney(document.getElementById('vf_enganche')?.value||0);
+      const modalidad  = document.getElementById('vf_modalidad')?.value || '';
+      const cuotas     = Number(document.getElementById('vf_cuotas')?.value||0);
+      const inicioISO  = document.getElementById('vf_inicio')?.value || '';
+      const finISO     = document.getElementById('vf_fin')?.value || '';
+      const metodoPago = document.getElementById('vf_metodo')?.value || '';
+      const tipoVenta  = (document.getElementById('vd_tipo')?.value||'').toUpperCase();
 
-  return {
-    ids: {
-      idVenta: String(idVenta||''),
-      idDesarrollo: String(idDesarrollo||'')
-    },
-    Lote: {
-      id: String(lot0.id||''),
-      NombreLote: String(lot0.label||''),
-      PrecioLote: Number(lot0.precio||0),
-      idManzana: String(MAP_LOTES[lot0.id]?.idManzana || 'idManzana'),
-      FotoDesarrollo: String(foto||'')
-    },
-    CuentaBancaria: {
-      id: String(ctaId||''),
-      Banco: banco,
-      CLABE: clabe,
-      Beneficiario: beneficiario
-    },
-    Vendedor: {
-      id: String(vendedorId||''),
-      NombreVendedor: String(vendedorName||'')
-    },
-    DetallesVenta: {
-      Enganche: Number(enganche||0),
-      EstatusFiniquitado: plan ? 'Pendiente' : 'Liquidado',
-      FechaFinalizacion: String(finISO||''),
-      FechaInicio: String(inicioISO||''),
-      FechaVenta: String(fechaVentaISO||''),
-      ModalidadPagos: plan ? String(modalidad||'Mensual') : ''
-    },
-    Cliente: {
-      idCliente: String(clienteId||''),
-      NombreCliente: String(clienteLabel||clienteId||'')
-    },
-    FechasPago // objeto con claves YYYY-MM-DD
-  };
-}
+      // Si es CONTADO, nunca hay plan
+      if (tipoVenta.includes('CONTADO')) plan = false;
 
-// POST JSON al PHP que reenvía al Webhook
-async function postToApphive(payload){
-  const res = await fetch('enviar_webhook.php', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
-  const txt = await res.text();
-  let data;
-  try { data = parseServerJson(txt); } catch { data = null; }
-  if (!res.ok || !data || data.status === 'error'){
-    throw new Error((data?.message || data?.apphive_raw || ('HTTP '+res.status)).toString().slice(0,250));
-  }
-  return data;
-}
+      // Monto por cuota correcto: (Total - Enganche) / Cuotas
+      const totalV = (lotes||[]).reduce((a,b)=>a+Number(b.precio||0),0);
+      const restante = Math.max(totalV - enganche, 0);
+      const montoPorCuota = (plan && cuotas>0) ? (restante / cuotas) : 0;
+
+      const FechasPago = plan ? buildFechasPago(modalidad, cuotas, inicioISO, montoPorCuota) : {};
+
+      const vendedorId   = ASESOR_UID || ASESOR_EMAIL || '';
+      const vendedorName = ASESOR_EMAIL || 'Usuario actual';
+
+      const foto = lotInfo.foto || lotInfo.FotoDesarrollo || FOTO_DESARROLLO || '';
+      const idManzana = lotInfo.idManzana || '';
+
+      // --- Detalles segun lo que pediste (incluye TipoVenta) ---
+      const detallesObj = {
+        Enganche: Number(enganche||0),
+        EstatusFiniquitado: plan ? 'Pendiente' : 'Liquidado',
+        FechaFinalizacion: String(finISO||''),
+        FechaInicio: String(inicioISO||''),
+        FechaVenta: String(fechaVentaISO||''),
+        ModalidadPagos: plan ? String(modalidad||'MENSUAL') : '',
+        MetodoPago: String(metodoPago||''),
+        TipoVenta: String(tipoVenta||'') // <<<<<<<<<<<<<< AQUI VA
+      };
+
+      return {
+        ids: { idVenta: String(idVenta||''), idDesarrollo: String(idDesarrollo||'') },
+        Lote: {
+          id: String(lot0.id||''),
+          NombreLote: String(lot0.label||''),
+          PrecioLote: Number(lot0.precio||0),
+          idManzana: String(idManzana||''),
+          FotoDesarrollo: String(foto||'')
+        },
+        CuentaBancaria: { id: String(ctaId||''), Banco: banco, CLABE: clabe, Beneficiario: beneficiario },
+        Vendedor: { id: String(vendedorId||''), NombreVendedor: String(vendedorName||'') },
+
+        // Mandamos ambos por compatibilidad:
+        Detalles: detallesObj,           // << clave exacta que pediste
+        DetallesVenta: detallesObj,      // << dejamos también la anterior por si alguien ya la consume
+
+        Cliente: { idCliente: String(clienteId||''), NombreCliente: String(clienteLabel||clienteId||'') },
+        FechasPago
+      };
+    }
+
+    async function postToApphive(payload){
+      const res = await fetch('enviar_webhook.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const txt = await res.text();
+      let data;
+      try { data = parseServerJson(txt); } catch { data = null; }
+      if (!res.ok || !data || data.status === 'error'){
+        throw new Error((data?.message || data?.apphive_raw || ('HTTP '+res.status)).toString().slice(0,250));
+      }
+      return data;
+    }
+    function escapeHtml(s){
+      return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+    function pretty(obj){ try { return JSON.stringify(obj, null, 2); } catch { return String(obj||''); } }
+    function pickWebhookMessage(resp){
+      let j = (resp && typeof resp.apphive_json === 'object') ? resp.apphive_json : null;
+      if (!j) { try { j = JSON.parse(resp?.apphive_raw || '{}'); } catch { j = {}; } }
+      const estatus = String(j?.Estatus ?? j?.estatus ?? resp?.http_code ?? '');
+      const desc = String(j?.Descripcion ?? j?.descripcion ?? j?.message ?? j?.Message ?? '').trim();
+      return { estatus, desc };
+    }
 
     // ====== Guardar (crear / editar) ======
-  // ====== Guardar (crear / editar) ======
-async function guardarVenta(){
-  const clienteId = (document.getElementById('vd_cliente').value||'').trim();
-  const fecha     = (document.getElementById('vd_fecha').value||'').trim();
-  const tipo      = (document.getElementById('vd_tipo').value||'').trim();
-  let   contrato  = (document.getElementById('vd_contrato').value||'').trim();
-  const obs       = (document.getElementById('vl_obs').value||'').trim();
-  const editId    = (document.getElementById('editId').value||'').trim();
+    async function guardarVenta(){
+      const clienteId = (document.getElementById('vd_cliente').value||'').trim();
+      const fecha     = (document.getElementById('vd_fecha').value||'').trim();
+      const tipo      = (document.getElementById('vd_tipo').value||'').trim();
+      let   contrato  = (document.getElementById('vd_contrato').value||'').trim();
+      const obs       = (document.getElementById('vl_obs').value||'').trim();
+      const editId    = (document.getElementById('editId').value||'').trim();
 
-  if (!clienteId || !fecha || !tipo){ Swal.fire('Completa los campos obligatorios','','warning'); return; }
-  if (CARRITO.length === 0){ Swal.fire('Agrega al menos un lote','','warning'); return; }
+      if (!clienteId || !fecha || !tipo){ Swal.fire('Completa los campos obligatorios','','warning'); return; }
+      if (CARRITO.length === 0){ Swal.fire('Agrega al menos un lote','','warning'); return; }
 
-  if (!contrato || /^por\s*generar$/i.test(contrato)) {
-    contrato = genContratoMs();
-    document.getElementById('vd_contrato').value = contrato;
-  }
+      if (!contrato || /^por\s*generar$/i.test(contrato)) {
+        contrato = genContratoMs();
+        document.getElementById('vd_contrato').value = contrato;
+      }
 
-  const clienteLabel = (() => {
-    const c = MAP_CLIENTES[clienteId];
-    return c ? (c.nombre || c.email || c.telefono || c.id) : clienteId;
-  })();
+      const clienteLabel = (() => {
+        const c = MAP_CLIENTES[clienteId];
+        return c ? (c.nombre || c.email || c.telefono || c.id) : clienteId;
+      })();
 
-  // (ya tienes esto) construir payload para tu propio backend
-  const ctaEl = document.getElementById('vf_cuenta');
-  const payload = {
-    idDesarrollo: ID_DES,
-    cliente: clienteId,
-    clienteLabel,
-    fecha, tipo, contrato,
-    asesorId: ASESOR_UID || '',
-    asesorRef: ASESOR_EMAIL || ASESOR_UID || '',
-    lotes: CARRITO.map(x => ({ id: x.id, label: x.label, precio: Number(x.precio||0) })),
-    obs,
-    enganche: {
-      total: normalizeMoney(document.getElementById('vf_enganche').value),
-      plan: !!document.getElementById('vf_plan').checked,
-      modalidad: document.getElementById('vf_modalidad').value||'',
-      cuotas: Number(document.getElementById('vf_cuotas').value||0),
-      inicio: document.getElementById('vf_inicio').value||'',
-      cuenta: (ctaEl.value||'').trim(),
-      cuentaId: ctaEl.dataset.id || '',
-      fin: document.getElementById('vf_fin').value||'',
+      const ctaEl = document.getElementById('vf_cuenta');
+      const payload = {
+        idDesarrollo: ID_DES,
+        cliente: clienteId,
+        clienteLabel,
+        fecha, tipo, contrato,
+        asesorId: ASESOR_UID || '',
+        asesorRef: ASESOR_EMAIL || ASESOR_UID || '',
+        lotes: CARRITO.map(x => ({ id: x.id, label: x.label, precio: Number(x.precio||0) })),
+        obs,
+        enganche: {
+          total: normalizeMoney(document.getElementById('vf_enganche').value),
+          plan: !!document.getElementById('vf_plan').checked,
+          modalidad: document.getElementById('vf_modalidad').value||'',
+          cuotas: Number(document.getElementById('vf_cuotas').value||0),
+          inicio: document.getElementById('vf_inicio').value||'',
+          cuenta: (ctaEl.value||'').trim(),
+          cuentaId: ctaEl.dataset.id || '',
+          fin: document.getElementById('vf_fin').value||'',
+        }
+      };
+
+      const url  = editId ? 'venta_editar.php' : 'registrar_venta_backend.php';
+      const body = editId ? JSON.stringify({ idVenta: editId, ...payload }) : JSON.stringify(payload);
+
+      const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body });
+      let data; try { data = parseServerJson(await res.text()); } catch { data = null; }
+
+      if (res.ok && data && data.ok) {
+        const idVenta = data.idVenta || editId || contrato;
+
+        const payloadApphive = buildWebhookPayload({
+          idVenta,
+          idDesarrollo: ID_DES,
+          clienteId,
+          clienteLabel,
+          lotes: CARRITO,
+          fechaVentaISO: fecha
+        });
+
+        try{
+          const resp = await postToApphive(payloadApphive);
+          const { estatus, desc } = pickWebhookMessage(resp);
+          if (estatus === '200') {
+            Swal.fire({ icon:'success', title:'¡Listo!', text: desc || 'Operación realizada con éxito.', timer: 2500, showConfirmButton: false });
+          } else {
+            Swal.fire({ icon:'info', title:'Respuesta del Webhook', text: desc || `Estatus: ${estatus || 'desconocido'}` });
+          }
+          modalVenta.hide();
+          await cargarVentas();
+        } catch(err){
+          console.error('Webhook error:', err);
+          const preSent = `<pre style="text-align:left;max-height:40vh;overflow:auto;font-size:12px;">${escapeHtml(pretty(payloadApphive))}</pre>`;
+          Swal.fire({
+            icon:'warning',
+            title:'Guardado, pero no se pudo enviar a Apphive',
+            html: `
+              <div class="text-start" style="font-size:14px">
+                <div class="mb-2"><b>Error:</b></div>
+                <pre style="text-align:left;max-height:25vh;overflow:auto;font-size:12px;">${escapeHtml(String(err))}</pre>
+                <hr>
+                <div class="mb-2"><b>Payload enviado:</b></div>
+                ${preSent}
+              </div>
+            `,
+            width: 700
+          });
+          modalVenta.hide();
+          await cargarVentas();
+        }
+      } else {
+        Swal.fire({icon:'error', title:'No se pudo guardar', text: (data?.error || ('HTTP '+res.status))});
+      }
     }
-  };
 
-  const url  = editId ? 'venta_editar.php' : 'registrar_venta_backend.php';
-  const body = editId ? JSON.stringify({ idVenta: editId, ...payload }) : JSON.stringify(payload);
-
-  // 1) guardas en tu backend (si aplica)
-  const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body });
-  let data; try { data = parseServerJson(await res.text()); } catch { data = null; }
-
-  if (res.ok && data && data.ok) {
-    // ID VENTA (si tu backend lo devuelve, úsalo; si no, usa contrato/timestamp)
-    const idVenta = data.idVenta || editId || contrato;
-
-    // 2) arma payload exacto para Apphive
-    const payloadApphive = buildWebhookPayload({
-      idVenta,
-      idDesarrollo: ID_DES,
-      clienteId,
-      clienteLabel,
-      lotes: CARRITO,
-      fechaVentaISO: fecha
-    });
-
-    try{
-      // 3) envía DIRECTO a Apphive (via enviar_webhook.php)
-      const resp = await postToApphive(payloadApphive);
-      console.log('Webhook OK:', resp);
-
-      Swal.fire({icon:'success', title: editId?'Venta actualizada y enviada':'Venta registrada y enviada', timer:1600, showConfirmButton:false});
-      modalVenta.hide();
-      await cargarVentas();
-
-    }catch(err){
-      console.error('Webhook error:', err);
-      Swal.fire({icon:'warning', title:'Guardado, pero no se pudo enviar a Apphive', text:String(err).slice(0,280)});
-      modalVenta.hide();
-      await cargarVentas();
-    }
-  } else {
-    Swal.fire({icon:'error', title:'No se pudo guardar', text: (data?.error || ('HTTP '+res.status))});
-  }
-}
-
-    // ====== Ver (con plan) ======
+    // ====== Ver / Editar / Eliminar / Contrato / Pagos ======
     async function verVenta(id){
       const v = (VENTAS || []).find(x => x.id === id);
       if (!v) return;
@@ -1075,7 +1137,6 @@ async function guardarVenta(){
       });
     }
 
-    // ====== Cargar una venta en el modal (Editar) ======
     async function abrirEditar(id){
       if (!VENTAS.length) await cargarVentas();
       resetForm();
@@ -1117,14 +1178,15 @@ async function guardarVenta(){
         }));
       }
       renderCarrito();
-const selLot = document.getElementById('vl_select');
-if (selLot && selLot.value) setPrecioDesdeLote(selLot.value);
+      const selLot = document.getElementById('vl_select');
+      if (selLot && selLot.value) setPrecioDesdeLote(selLot.value);
 
       buildCuentaSelect();
+      togglePlanByTipo();
+      recomputeFin();
       modalVenta.show();
     }
 
-    // ====== Eliminar ======
     async function eliminarVenta(id){
       const v = (VENTAS || []).find(x => x.id === id);
       if (!v) return;
@@ -1150,29 +1212,23 @@ if (selLot && selLot.value) setPrecioDesdeLote(selLot.value);
       }
     }
 
-    // ====== Contrato (DOCX/PDF) ======
     async function generarContrato(id, formato = 'docx') {
       const v = (VENTAS || []).find(x => x.id === id);
       if (!v) { Swal.fire({icon:'error', title:'No se encontró la venta'}); return; }
-
       const payload = { idVenta: id, idDesarrollo: ID_DES, formato, venta: v };
-
       try {
         const res = await fetch('contrato_generar.php', {
           method: 'POST',
           headers: { 'Content-Type':'application/json' },
           body: JSON.stringify(payload)
         });
-
         const txt  = await res.text();
         const theData = parseServerJson(txt);
         if (!res.ok || !theData || !theData.ok) throw new Error((theData && theData.error) || ('HTTP ' + res.status));
-
         const urlDocx = theData.url_docx || theData.url || '';
         const urlPdf  = theData.url_pdf  || '';
         const primaryUrl   = (formato === 'pdf' && urlPdf) ? urlPdf : urlDocx;
         const primaryLabel = (formato === 'pdf' && urlPdf) ? 'PDF'   : 'DOCX';
-
         Swal.fire({
           icon: 'success',
           title: 'Contrato generado',
@@ -1210,13 +1266,11 @@ if (selLot && selLot.value) setPrecioDesdeLote(selLot.value);
     }
 
     // ====== PAGOS ======
-
-    // Rellena el select de ventas (para el modal de pagar)
-    function fillVentasSelect(select, preferId = ''){
+    function fillVentasSelect(select, preferId =''){
       select.innerHTML = '<option value="">Seleccione venta…</option>';
       (VENTAS||[]).forEach(v=>{
         const esCredito = String(v.tipo||'').toUpperCase().includes('CREDITO');
-        if (!esCredito) return; // solo crédito
+        if (!esCredito) return;
         const opt = document.createElement('option');
         opt.value = v.id;
         opt.textContent = `${v.cliente||'Cliente'} — ${v.contrato||''} — ${money(v.total||0)}`;
@@ -1225,15 +1279,12 @@ if (selLot && selLot.value) setPrecioDesdeLote(selLot.value);
       if (preferId){ select.value = preferId; }
       buildLotesDeVentaEnPagar(preferId);
     }
-
-    // Cuando elijo una venta para pagar, cargar sus lotes
     function buildLotesDeVentaEnPagar(ventaId){
       const sel = document.getElementById('pg_lote');
       sel.innerHTML = '<option value="">(Si la venta tiene varios, elige uno)</option>';
       if (!ventaId) return;
       const v = (VENTAS||[]).find(x=>x.id===ventaId);
       if (!v) return;
-
       if (Array.isArray(v.lotes) && v.lotes.length){
         v.lotes.forEach(it=>{
           const opt=document.createElement('option');
@@ -1247,8 +1298,6 @@ if (selLot && selLot.value) setPrecioDesdeLote(selLot.value);
         sel.appendChild(opt);
       }
     }
-
-    // Abre modal de pagar
     function openModalPagar(preferVentaId=''){
       const f = document.getElementById('formPagar');
       f.reset();
@@ -1256,42 +1305,34 @@ if (selLot && selLot.value) setPrecioDesdeLote(selLot.value);
       fillVentasSelect(document.getElementById('pg_venta'), preferVentaId);
       modalPagar.show();
     }
-
-    // Guardar pago (con archivo)
-async function guardarPago(){
-  const f = document.getElementById('formPagar');
-  const ventaId = document.getElementById('pg_venta').value;
-  const loteId  = document.getElementById('pg_lote').value;
-  const total   = normalizeMoney(document.getElementById('pg_total').value);
-
-  if (!ventaId || !total || total <= 0){
-    Swal.fire('Completa la venta y el total válido','','warning');
-    return;
-  }
-
-  const fd = new FormData(f);
-  fd.set('idVenta', ventaId);   // 🔴 aseguramos idVenta
-  fd.set('idLote', loteId);     // 🔴 aseguramos idLote (opcional, si aplica)
-  fd.set('Total', String(total));
-
-  try {
-    const res  = await fetch('pagar_registrar.php', { method:'POST', body: fd });
-    const text = await res.text();
-    const data = parseServerJson(text);
-
-    if (res.ok && data && data.ok){
-      Swal.fire({icon:'success', title:'Pago registrado', timer:1400, showConfirmButton:false});
-      modalPagar.hide();
-      await cargarVentas();
-    } else {
-      Swal.fire({icon:'error', title:'No se pudo registrar', text:(data?.error || ('HTTP '+res.status))});
+    async function guardarPago(){
+      const f = document.getElementById('formPagar');
+      const ventaId = document.getElementById('pg_venta').value;
+      const loteId  = document.getElementById('pg_lote').value;
+      const total   = normalizeMoney(document.getElementById('pg_total').value);
+      if (!ventaId || !total || total <= 0){
+        Swal.fire('Completa la venta y el total válido','','warning');
+        return;
+      }
+      const fd = new FormData(f);
+      fd.set('idVenta', ventaId);
+      fd.set('idLote', loteId);
+      fd.set('Total', String(total));
+      try {
+        const res  = await fetch('pagar_registrar.php', { method:'POST', body: fd });
+        const text = await res.text();
+        const data = parseServerJson(text);
+        if (res.ok && data && data.ok){
+          Swal.fire({icon:'success', title:'Pago registrado', timer:1400, showConfirmButton:false});
+          modalPagar.hide();
+          await cargarVentas();
+        } else {
+          Swal.fire({icon:'error', title:'No se pudo registrar', text:(data?.error || ('HTTP '+res.status))});
+        }
+      } catch(err){
+        Swal.fire({icon:'error', title:'Error', text:String(err).slice(0,280)});
+      }
     }
-  } catch(err){
-    Swal.fire({icon:'error', title:'Error', text:String(err).slice(0,280)});
-  }
-}
-
-    // Ver pagos de la venta
     async function verPagosVenta(ventaId){
       const body = document.getElementById('pagosVentaBody');
       body.innerHTML = 'Cargando…';
@@ -1302,12 +1343,10 @@ async function guardarPago(){
         });
         const data = parseServerJson(await res.text());
         if (!res.ok || !data || data.ok!==true) throw new Error(data?.error||('HTTP '+res.status));
-
         const pagos = data.pagos||[];
         const totalV = Number((VENTAS.find(v=>v.id===ventaId)||{}).total||0);
         const abonado = pagos.reduce((a,p)=>a+Number(p.Total||0),0);
         const resta   = Math.max(totalV - abonado, 0);
-
         body.innerHTML = `
           <div class="mb-2"><b>Contrato:</b> ${data.contrato||'—'}</div>
           <div class="mb-2"><b>Total Venta:</b> ${money(totalV)} · <b>Abonado:</b> ${money(abonado)} · <b>Restante:</b> ${money(resta)}</div>
@@ -1343,49 +1382,32 @@ async function guardarPago(){
       cargarVentas();
       document.getElementById('qVentas')?.addEventListener('input', renderVentas);
 
-      // NUEVO
-     document.getElementById('btnNuevo')?.addEventListener('click', async () => {
-  await cargarVentas();
-  await cargarFuentes([]);
-  await cargarCuentas();
-  resetForm();
-  const sel = document.getElementById('vl_select');
-  if (sel && sel.value) setPrecioDesdeLote(sel.value); // precarga si hay lote
-  modalVenta.show();
-});
+      document.getElementById('btnNuevo')?.addEventListener('click', async () => {
+        await cargarVentas();
+        await cargarFuentes([]);
+        await cargarCuentas();
+        resetForm();
+        const sel = document.getElementById('vl_select');
+        if (sel && sel.value) setPrecioDesdeLote(sel.value);
+        togglePlanByTipo();
+        recomputeFin();
+        modalVenta.show();
+      });
 
-
-      // PAGAR (sin selección, abre modal vacío con ventas a crédito)
       document.getElementById('btnPagar')?.addEventListener('click', async ()=>{
         if (!VENTAS.length) await cargarVentas();
         openModalPagar('');
       });
 
-      // Guardar venta
       document.getElementById('vl_add')?.addEventListener('click', addLote);
       document.getElementById('btnGuardarVenta')?.addEventListener('click', guardarVenta);
-
-      // Guardar pago
       document.getElementById('btnGuardarPago')?.addEventListener('click', guardarPago);
 
-      // Cambio de venta en modal de pagar
       document.getElementById('pg_venta')?.addEventListener('change', (e)=>{
         buildLotesDeVentaEnPagar(e.target.value||'');
       });
 
-      // Acciones por fila
-      document.getElementById('tbVentas').addEventListener('click', (ev)=>{
-        const btn = ev.target.closest('button[data-action]'); if (!btn) return;
-        const id  = btn.dataset.id;
-        const act = btn.dataset.action;
-        if (act==='ver')      verVenta(id);
-        if (act==='edit')     abrirEditar(id);
-        if (act==='del')      eliminarVenta(id);
-        if (act==='contrato') generarContrato(id, 'docx');
-        if (act==='pagos')    verPagosVenta(id);
-      });
-
-      // Config de plan (habilitar/deshabilitar)
+      // === Config de plan ===
       const selModalidad = document.getElementById('vf_modalidad');
       const modalidadChoices = new Choices(selModalidad, { searchPlaceholderValue:'Buscar...', shouldSort:false, itemSelectText:'', removeItemButton:false, allowHTML:true });
       const plan   = document.getElementById('vf_plan');
@@ -1393,7 +1415,10 @@ async function guardarPago(){
       const inicio = document.getElementById('vf_inicio');
 
       const recomputeFin = ()=>{
-        const disabled = !plan.checked;
+        // Además de considerar el switch, bloquea si es "A CONTADO"
+        const contado = isContado();
+        const disabled = contado || !plan.checked;
+
         selModalidad.disabled = disabled;
         if (disabled) modalidadChoices.disable(); else modalidadChoices.enable();
         cuotas.disabled = disabled; inicio.disabled = disabled;
@@ -1402,17 +1427,56 @@ async function guardarPago(){
         const n    = Number(cuotas.value || 0);
         const iniS = inicio.value || '';
         const finI = document.getElementById('vf_fin');
-        if (disabled || !mod || !n || !iniS){ finI.value=''; return; }
-        const base = parseDMY(iniS); if (!base){ finI.value=''; return; }
-        const fin = stepByModalidad(mod, base, n-1);
+        if (disabled || !mod || !n || !iniS){ finI.value=''; computeCuota(); return; }
+        // calcular fin:
+        const base = parseDMY(iniS); if (!base){ finI.value=''; computeCuota(); return; }
+        const add = (M,k)=>{
+          switch((M||'').toUpperCase()){
+            case 'SEMANAL': return addDays(base,7*k);
+            case 'QUINCENAL': return addDays(base,15*k);
+            case 'MENSUAL': return addMonths(base,1*k);
+            case 'BIMESTRAL': return addMonths(base,2*k);
+            case 'TRIMESTRAL': return addMonths(base,3*k);
+            case 'CUATRIMESTRAL': return addMonths(base,4*k);
+            case 'SEMESTRAL': return addMonths(base,6*k);
+            case 'ANUAL': return addMonths(base,12*k);
+            default: return addMonths(base,1*k);
+          }
+        };
+        const fin = add(selModalidad.value, n-1);
         finI.value = toISO(fin);
+        computeCuota();
       };
 
-      plan.addEventListener('change', recomputeFin);
+      // Listeners de recálculo
+      plan.addEventListener('change', ()=>{ togglePlanByTipo(); recomputeFin(); });
       selModalidad.addEventListener('change', recomputeFin);
       cuotas.addEventListener('input',  recomputeFin);
       inicio.addEventListener('change', recomputeFin);
-      window.recomputeFin = recomputeFin; // para resetForm
+      document.getElementById('vf_enganche')?.addEventListener('input', ()=>{ computeCuota(); });
+      document.getElementById('vd_tipo')?.addEventListener('change', ()=>{ togglePlanByTipo(); recomputeFin(); });
+
+      window.recomputeFin = recomputeFin;
+      window.computeCuota = computeCuota;
+
+      // Primera vez: respeta el tipo actual
+      togglePlanByTipo();
+      recomputeFin();
+
+      // ===== Delegación de eventos para acciones de la tabla =====
+      document.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-action]');
+        if (!btn) return;
+        const action = btn.getAttribute('data-action');
+        const id     = btn.getAttribute('data-id');
+        switch (action) {
+          case 'ver':       verVenta(id); break;
+          case 'edit':      abrirEditar(id); break;
+          case 'del':       eliminarVenta(id); break;
+          case 'contrato':  generarContrato(id, 'docx'); break;
+          case 'pagos':     verPagosVenta(id); break;
+        }
+      });
     });
   </script>
 </body>
