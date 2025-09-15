@@ -829,67 +829,204 @@ document.getElementById('vl_select')?.addEventListener('change', (e)=>{
       const del = ev.target.closest('#vl_tbody button[data-ix]');
       if (del) { const ix = +del.dataset.ix; if (ix>=0 && ix < CARRITO.length) { CARRITO.splice(ix,1); renderCarrito(); } }
     });
+// === WEBHOOK APPHIVE ===
+function buildFechasPago(modalidad, cuotas, inicioISO, montoPorCuota){
+  const out = {};
+  const n = Number(cuotas||0);
+  if (!modalidad || !n || !inicioISO) return out;
+  let base = new Date(inicioISO + 'T00:00:00');
+
+  for (let i=0; i<n; i++){
+    let f;
+    switch((modalidad||'').toUpperCase()){
+      case 'SEMANAL':        f = addDays(base, 7*i); break;
+      case 'QUINCENAL':      f = addDays(base, 15*i); break;
+      case 'MENSUAL':        f = addMonths(base, 1*i); break;
+      case 'BIMESTRAL':      f = addMonths(base, 2*i); break;
+      case 'TRIMESTRAL':     f = addMonths(base, 3*i); break;
+      case 'CUATRIMESTRAL':  f = addMonths(base, 4*i); break;
+      case 'SEMESTRAL':      f = addMonths(base, 6*i); break;
+      case 'ANUAL':          f = addMonths(base,12*i); break;
+      default:               f = addMonths(base, 1*i);
+    }
+    const key = toISO(f);
+    out[key] = { Fecha: key, Monto: Number(montoPorCuota||0) };
+  }
+  return out;
+}
+
+// Construye el payload EXACTO para Apphive
+function buildWebhookPayload({ idVenta, idDesarrollo, clienteId, clienteLabel, lotes, fechaVentaISO }){
+  // Lote a enviar: si hay varios, Apphive espera un objeto; tomamos el primero.
+  const lot0 = (lotes && lotes[0]) ? lotes[0] : {};
+
+  // Cuenta bancaria (desde el select de cuentas)
+  const cuentaSel = document.getElementById('vf_cuenta_sel');
+  const ctaId  = (cuentaSel?.value||'').trim();
+  const hidden = document.getElementById('vf_cuenta');
+  const ctaStr = (hidden?.value||'').trim(); // "Banco — Beneficiario — CLABE"
+  const [banco='', beneficiario='', clabe=''] = ctaStr.split('—').map(s=>String(s||'').trim());
+
+  // Detalles del enganche / plan
+  const plan       = !!document.getElementById('vf_plan')?.checked;
+  const enganche   = normalizeMoney(document.getElementById('vf_enganche')?.value||0);
+  const modalidad  = document.getElementById('vf_modalidad')?.value || '';
+  const cuotas     = Number(document.getElementById('vf_cuotas')?.value||0);
+  const inicioISO  = document.getElementById('vf_inicio')?.value || '';
+  const finISO     = document.getElementById('vf_fin')?.value || '';
+  const montoPorCuota = plan && cuotas>0 ? (enganche / cuotas) : 0;
+
+  const FechasPago = plan
+    ? buildFechasPago(modalidad, cuotas, inicioISO, montoPorCuota)
+    : {}; // si no hay plan, lo mandamos vacío
+
+  // Vendedor: saco lo que ya tienes en sesión (email/uid)
+  const vendedorId   = ASESOR_UID || ASESOR_EMAIL || '';
+  const vendedorName = ASESOR_EMAIL || 'Usuario actual';
+
+  // Foto de desarrollo si la tienes en tu catálogo de lotes
+  const foto = (MAP_LOTES[lot0.id]?.foto || MAP_LOTES[lot0.id]?.FotoDesarrollo || '');
+
+  return {
+    ids: {
+      idVenta: String(idVenta||''),
+      idDesarrollo: String(idDesarrollo||'')
+    },
+    Lote: {
+      id: String(lot0.id||''),
+      NombreLote: String(lot0.label||''),
+      PrecioLote: Number(lot0.precio||0),
+      idManzana: String(MAP_LOTES[lot0.id]?.idManzana || 'idManzana'),
+      FotoDesarrollo: String(foto||'')
+    },
+    CuentaBancaria: {
+      id: String(ctaId||''),
+      Banco: banco,
+      CLABE: clabe,
+      Beneficiario: beneficiario
+    },
+    Vendedor: {
+      id: String(vendedorId||''),
+      NombreVendedor: String(vendedorName||'')
+    },
+    DetallesVenta: {
+      Enganche: Number(enganche||0),
+      EstatusFiniquitado: plan ? 'Pendiente' : 'Liquidado',
+      FechaFinalizacion: String(finISO||''),
+      FechaInicio: String(inicioISO||''),
+      FechaVenta: String(fechaVentaISO||''),
+      ModalidadPagos: plan ? String(modalidad||'Mensual') : ''
+    },
+    Cliente: {
+      idCliente: String(clienteId||''),
+      NombreCliente: String(clienteLabel||clienteId||'')
+    },
+    FechasPago // objeto con claves YYYY-MM-DD
+  };
+}
+
+// POST JSON al PHP que reenvía al Webhook
+async function postToApphive(payload){
+  const res = await fetch('enviar_webhook.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  const txt = await res.text();
+  let data;
+  try { data = parseServerJson(txt); } catch { data = null; }
+  if (!res.ok || !data || data.status === 'error'){
+    throw new Error((data?.message || data?.apphive_raw || ('HTTP '+res.status)).toString().slice(0,250));
+  }
+  return data;
+}
 
     // ====== Guardar (crear / editar) ======
-    async function guardarVenta(){
-      const clienteId = (document.getElementById('vd_cliente').value||'').trim();
-      const fecha     = (document.getElementById('vd_fecha').value||'').trim();
-      const tipo      = (document.getElementById('vd_tipo').value||'').trim();
-      let   contrato  = (document.getElementById('vd_contrato').value||'').trim();
-      const obs       = (document.getElementById('vl_obs').value||'').trim();
-      const editId    = (document.getElementById('editId').value||'').trim();
+  // ====== Guardar (crear / editar) ======
+async function guardarVenta(){
+  const clienteId = (document.getElementById('vd_cliente').value||'').trim();
+  const fecha     = (document.getElementById('vd_fecha').value||'').trim();
+  const tipo      = (document.getElementById('vd_tipo').value||'').trim();
+  let   contrato  = (document.getElementById('vd_contrato').value||'').trim();
+  const obs       = (document.getElementById('vl_obs').value||'').trim();
+  const editId    = (document.getElementById('editId').value||'').trim();
 
-      if (!clienteId || !fecha || !tipo){ Swal.fire('Completa los campos obligatorios','','warning'); return; }
-      if (CARRITO.length === 0){ Swal.fire('Agrega al menos un lote','','warning'); return; }
+  if (!clienteId || !fecha || !tipo){ Swal.fire('Completa los campos obligatorios','','warning'); return; }
+  if (CARRITO.length === 0){ Swal.fire('Agrega al menos un lote','','warning'); return; }
 
-      if (!contrato || /^por\s*generar$/i.test(contrato)) {
-        contrato = genContratoMs();
-        document.getElementById('vd_contrato').value = contrato;
-      }
+  if (!contrato || /^por\s*generar$/i.test(contrato)) {
+    contrato = genContratoMs();
+    document.getElementById('vd_contrato').value = contrato;
+  }
 
-      const clienteLabel = (() => {
-        const c = MAP_CLIENTES[clienteId];
-        return c ? (c.nombre || c.email || c.telefono || c.id) : clienteId;
-      })();
+  const clienteLabel = (() => {
+    const c = MAP_CLIENTES[clienteId];
+    return c ? (c.nombre || c.email || c.telefono || c.id) : clienteId;
+  })();
 
-      recomputeFin();
-      const ctaEl = document.getElementById('vf_cuenta');
-
-      const payload = {
-        idDesarrollo: ID_DES,
-        cliente: clienteId,
-        clienteLabel,
-        fecha, tipo, contrato,
-        asesorId: ASESOR_UID || '',
-        asesorRef: ASESOR_EMAIL || ASESOR_UID || '',
-        lotes: CARRITO.map(x => ({ id: x.id, label: x.label, precio: Number(x.precio||0) })),
-        obs,
-        enganche: {
-          total: normalizeMoney(document.getElementById('vf_enganche').value),
-          plan: !!document.getElementById('vf_plan').checked,
-          modalidad: document.getElementById('vf_modalidad').value||'',
-          cuotas: Number(document.getElementById('vf_cuotas').value||0),
-          inicio: document.getElementById('vf_inicio').value||'',
-          cuenta: (ctaEl.value||'').trim(),
-          cuentaId: ctaEl.dataset.id || '',
-          fin: document.getElementById('vf_fin').value||'',
-        }
-      };
-
-      const url  = editId ? 'venta_editar.php' : 'registrar_venta_backend.php';
-      const body = editId ? JSON.stringify({ idVenta: editId, ...payload }) : JSON.stringify(payload);
-
-      const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body });
-      let data; try { data = parseServerJson(await res.text()); } catch { data = null; }
-
-      if (res.ok && data && data.ok) {
-        Swal.fire({icon:'success', title: editId?'Venta actualizada':'Venta registrada', timer:1400, showConfirmButton:false});
-        modalVenta.hide();
-        await cargarVentas();
-      } else {
-        Swal.fire({icon:'error', title:'No se pudo guardar', text: (data?.error || ('HTTP '+res.status))});
-      }
+  // (ya tienes esto) construir payload para tu propio backend
+  const ctaEl = document.getElementById('vf_cuenta');
+  const payload = {
+    idDesarrollo: ID_DES,
+    cliente: clienteId,
+    clienteLabel,
+    fecha, tipo, contrato,
+    asesorId: ASESOR_UID || '',
+    asesorRef: ASESOR_EMAIL || ASESOR_UID || '',
+    lotes: CARRITO.map(x => ({ id: x.id, label: x.label, precio: Number(x.precio||0) })),
+    obs,
+    enganche: {
+      total: normalizeMoney(document.getElementById('vf_enganche').value),
+      plan: !!document.getElementById('vf_plan').checked,
+      modalidad: document.getElementById('vf_modalidad').value||'',
+      cuotas: Number(document.getElementById('vf_cuotas').value||0),
+      inicio: document.getElementById('vf_inicio').value||'',
+      cuenta: (ctaEl.value||'').trim(),
+      cuentaId: ctaEl.dataset.id || '',
+      fin: document.getElementById('vf_fin').value||'',
     }
+  };
+
+  const url  = editId ? 'venta_editar.php' : 'registrar_venta_backend.php';
+  const body = editId ? JSON.stringify({ idVenta: editId, ...payload }) : JSON.stringify(payload);
+
+  // 1) guardas en tu backend (si aplica)
+  const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body });
+  let data; try { data = parseServerJson(await res.text()); } catch { data = null; }
+
+  if (res.ok && data && data.ok) {
+    // ID VENTA (si tu backend lo devuelve, úsalo; si no, usa contrato/timestamp)
+    const idVenta = data.idVenta || editId || contrato;
+
+    // 2) arma payload exacto para Apphive
+    const payloadApphive = buildWebhookPayload({
+      idVenta,
+      idDesarrollo: ID_DES,
+      clienteId,
+      clienteLabel,
+      lotes: CARRITO,
+      fechaVentaISO: fecha
+    });
+
+    try{
+      // 3) envía DIRECTO a Apphive (via enviar_webhook.php)
+      const resp = await postToApphive(payloadApphive);
+      console.log('Webhook OK:', resp);
+
+      Swal.fire({icon:'success', title: editId?'Venta actualizada y enviada':'Venta registrada y enviada', timer:1600, showConfirmButton:false});
+      modalVenta.hide();
+      await cargarVentas();
+
+    }catch(err){
+      console.error('Webhook error:', err);
+      Swal.fire({icon:'warning', title:'Guardado, pero no se pudo enviar a Apphive', text:String(err).slice(0,280)});
+      modalVenta.hide();
+      await cargarVentas();
+    }
+  } else {
+    Swal.fire({icon:'error', title:'No se pudo guardar', text: (data?.error || ('HTTP '+res.status))});
+  }
+}
 
     // ====== Ver (con plan) ======
     async function verVenta(id){
