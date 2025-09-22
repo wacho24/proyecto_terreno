@@ -140,16 +140,23 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
             <table class="table align-items-center mb-0">
               <thead>
                 <tr>
-                  <th style="width:60px">N°</th>
-                  <th>Cliente</th>
-                  <th class="text-truncate">Lote-Mz</th>
-                  <th>Fecha</th>
-                  <th>Tip. V.</th>
-                  <th class="text-end">Total</th>
-                  <th>Estado</th>
-                  <th>Contrato</th>
-                  <th class="text-center" style="width:270px">Acciones</th>
-                </tr>
+                 <th style="width:60px">N°</th>
+
+<thead>
+  <tr>
+    <th style="width:60px">N°</th>
+    <th>Cliente</th>
+    <th class="text-truncate">Lote</th>
+    <th>Fecha Venta</th>
+    <th>Tipo Venta</th>
+    <th class="text-end">Precio</th>
+    <th>Status</th>
+    <th>ID Lote</th>
+    <th class="text-center" style="width:200px">Acciones</th>
+  </tr>
+</thead>
+
+
               </thead>
               <tbody id="tbVentas"></tbody>
             </table>
@@ -557,57 +564,53 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
     const modalPagosV = new bootstrap.Modal('#modalPagosVenta');
 
     // ====== Tabla ======
-    function renderVentas() {
-      const tb = document.getElementById('tbVentas');
-      const empty = document.getElementById('emptyVentas');
-      const q = (document.getElementById('qVentas')?.value || '').toLowerCase().trim();
-      tb.innerHTML = '';
-      let n = 0;
+  function renderVentas() {
+  const tb = document.getElementById('tbVentas');
+  const empty = document.getElementById('emptyVentas');
+  const q = (document.getElementById('qVentas')?.value || '').toLowerCase().trim();
+  tb.innerHTML = '';
+  let n = 0;
 
-      (VENTAS || []).filter(v => {
-        if (!q) return true;
-        const hay = `${v.cliente||''} ${v.lote||''} ${v.fecha||''} ${v.tipo||''} ${v.contrato||''}`.toLowerCase();
-        return hay.includes(q);
-      }).forEach(v => {
-        const tipoChip = String(v.tipo||'').toUpperCase().includes('CREDITO')
-          ? `<span class="chip"><i class="fa-solid fa-clock"></i> CRÉDITO</span>`
-          : `<span class="chip" style="background:#dcfce7;color:#065f46"><i class="fa-solid fa-bolt"></i> CONTADO</span>`;
+  (VENTAS || []).filter(v => {
+    if (!q) return true;
+    const hay = `${v.cliente||''} ${v.lote||''} ${v.fechaVenta||''} ${v.tipoVenta||''} ${v.status||''}`.toLowerCase();
+    return hay.includes(q);
+  }).forEach(v => {
+    const tipoChip = String(v.tipoVenta||'').toUpperCase().includes('CREDITO')
+      ? `<span class="chip"><i class="fa-solid fa-clock"></i> CRÉDITO</span>`
+      : `<span class="chip" style="background:#dcfce7;color:#065f46"><i class="fa-solid fa-bolt"></i> CONTADO</span>`;
 
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${++n}</td>
-          <td>${v.cliente||''}</td>
-          <td class="text-truncate" title="${v.lote||''}">${v.lote||''}</td>
-          <td>${v.fecha||''}</td>
-          <td>${tipoChip}</td>
-          <td class="text-end">${money(v.total||0)}</td>
-          <td>${estadoBadge(v.tipo, v.estatus)}</td>
-          <td>${v.contrato||''}</td>
-          <td class="text-center">
-            <div class="btn-group">
-              <button class="btn btn-sm btn-outline-secondary" title="Ver" data-action="ver" data-id="${v.id}">
-                <i class="fa-solid fa-eye"></i>
-              </button>
-              <button class="btn btn-sm btn-outline-primary" title="Editar" data-action="edit" data-id="${v.id}">
-                <i class="fa-solid fa-pen-to-square"></i>
-              </button>
-              <button class="btn btn-sm btn-outline-danger" title="Eliminar" data-action="del" data-id="${v.id}">
-                <i class="fa-solid fa-trash"></i>
-              </button>
-              <button class="btn btn-sm btn-outline-warning" title="Contrato" data-action="contrato" data-id="${v.id}">
-                <i class="fa-solid fa-file-lines"></i>
-              </button>
-              <button class="btn btn-sm btn-outline-success" title="Pagos" data-action="pagos" data-id="${v.id}">
-                <i class="fa-solid fa-coins"></i>
-              </button>
-            </div>
-          </td>
-        `;
-        tb.appendChild(tr);
-      });
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${++n}</td>
+      <td>${v.cliente||''}</td>
+      <td class="text-truncate" title="${v.lote||''}">${v.lote||''}</td>
+      <td>${v.fechaVenta||''}</td>
+      <td>${tipoChip}</td>
+      <td class="text-end">${money(v.precio||0)}</td>
+      <td>${v.status||''}</td>
+      <td>${v.idLote||''}</td>
+      <td class="text-center">
+        <div class="btn-group">
+          <button class="btn btn-sm btn-outline-secondary" title="Ver" data-action="ver" data-id="${v.idLote}">
+            <i class="fa-solid fa-eye"></i>
+          </button>
+          <button class="btn btn-sm btn-outline-primary" title="Editar" data-action="edit" data-id="${v.idLote}">
+            <i class="fa-solid fa-pen-to-square"></i>
+          </button>
+          <button class="btn btn-sm btn-outline-danger" title="Eliminar" data-action="del" data-id="${v.idLote}">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </div>
+      </td>
+    `;
+    tb.appendChild(tr);
+  });
 
-      if (empty) empty.style.display = tb.children.length ? 'none' : 'block';
-    }
+  if (empty) empty.style.display = tb.children.length ? 'none' : 'block';
+}
+
+
 
     async function cargarVentas() {
       const tb = document.getElementById('tbVentas');
@@ -1091,51 +1094,28 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
     }
 
     // ====== Ver / Editar / Eliminar / Contrato / Pagos ======
-    async function verVenta(id){
-      const v = (VENTAS || []).find(x => x.id === id);
-      if (!v) return;
-      const esCredito = String(v.tipo||'').toUpperCase().includes('CREDITO');
+   async function verVenta(id){
+  const v = (VENTAS || []).find(x => x.id === id);
+  if (!v) return;
 
-      let planHtml = '';
-      if (esCredito) {
-        try {
-          const res = await fetch('venta_detalle.php', {
-            method:'POST', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({ idVenta: id })
-          });
-          const data = parseServerJson(await res.text());
-          if (res.ok && data?.ok) {
-            const det = data.venta || {};
-            planHtml = `
-              <div class="mt-2 p-2 rounded" style="background:#f8fafc">
-                <div><b>Plan de pagos:</b> ${det.ModalidadPagos || '—'} ${det.CantidadCuotas?`· ${det.CantidadCuotas} cuotas`:''}</div>
-                <div><b>Inicio:</b> ${det.FechaInicio || '—'} · <b>Fin:</b> ${det.FechaFinalizacion || '—'}</div>
-              </div>
-            `;
-          }
-        } catch (e) { /* opcional */ }
-      }
+  Swal.fire({
+    title: '<span style="font-weight:800">Detalle de Venta</span>',
+    html: `
+      <div class="text-start" style="font-size:14px">
+        <div class="mb-2"><b>Cliente:</b> ${v.cliente||''}</div>
+        <div class="mb-2"><b>Lote:</b> ${v.lote||''}</div>
+        <div class="mb-2"><b>Fecha Venta:</b> ${v.fechaVenta||''}</div>
+        <div class="mb-2"><b>Tipo de Venta:</b> ${v.tipoVenta||''}</div>
+        <div class="mb-2"><b>Precio:</b> ${money(v.precio||0)}</div>
+        <div class="mb-2"><b>Status:</b> ${v.status||''}</div>
+        <div class="mb-2"><b>ID Lote:</b> ${v.idLote||''}</div>
+      </div>
+    `,
+    confirmButtonText: 'Cerrar',
+    width: 650
+  });
+}
 
-      const estado = estadoBadge(v.tipo);
-      Swal.fire({
-        title: '<span style="font-weight:800">Detalle de Venta</span>',
-        html: `
-          <div class="text-start" style="font-size:14px">
-            <div class="mb-2"><b>Cliente:</b> ${v.cliente||''}</div>
-            <div class="mb-2"><b>Fecha de inicio:</b> ${v.fecha||''}</div>
-            <div class="mb-2"><b>Tipo:</b> ${v.tipo||''} &nbsp; ${estado}</div>
-            <div class="mb-2"><b>Total:</b> ${money(v.total||0)}</div>
-            <div class="mb-2"><b>Lote(s):</b>
-              <div style="background:#f8fafc;padding:8px;border-radius:8px">${v.lote||''}</div>
-            </div>
-            ${planHtml}
-            <div class="mb-2"><b>Contrato:</b> ${v.contrato||''}</div>
-          </div>
-        `,
-        confirmButtonText: 'Cerrar',
-        width: 650
-      });
-    }
 
     async function abrirEditar(id){
       if (!VENTAS.length) await cargarVentas();

@@ -3,97 +3,81 @@
 require_once __DIR__ . '/_guard.php';
 header('Content-Type: application/json; charset=utf-8');
 
-$id = isset($_GET['id']) ? preg_replace('/[^A-Za-z0-9_\-]/', '', (string)$_GET['id']) : '';
-if ($id === '') { echo json_encode(['ok'=>false,'error'=>'id vacío']); exit; }
+$idDesarrollo = isset($_GET['id']) ? preg_replace('/[^A-Za-z0-9_\-]/', '', (string)$_GET['id']) : '';
+if ($idDesarrollo === '') { echo json_encode(['ok'=>false,'error'=>'id vacío']); exit; }
 
 require_once __DIR__ . '/../config/firebase_init.php';
 /** @var \Kreait\Firebase\Database $database */
 $ROOT_PREFIX = 'projects/proj_8HNCM2DFob/data';
 
+/* ===== helpers ===== */
+function normalize_money($v){
+  if (is_numeric($v)) return (float)$v;
+  $s = preg_replace('/[^\d,\.\-]/', '', (string)$v);
+  return $s === '' ? 0.0 : (float)$s;
+}
+
+function to_dmY($val){
+  $val = trim((string)$val);
+  if ($val === '') return '';
+  $d = DateTime::createFromFormat('d/m/Y', $val);
+  if ($d instanceof DateTime) return $d->format('d/m/Y');
+  $d = DateTime::createFromFormat('Y-m-d', $val);
+  if ($d instanceof DateTime) return $d->format('d/m/Y');
+  $t = strtotime($val);
+  if ($t !== false) return date('d/m/Y', $t);
+  return $val;
+}
+
 try {
-  // === 1) Cargar ventas (estructura legacy que ya usabas)
-  $ventasPath = "$ROOT_PREFIX/VentasGenerales";
-  $snap = $database->getReference($ventasPath)->getSnapshot();
-  $rows = $snap->getValue() ?: [];
+  // 1) Cargar desarrollo específico
+  $desPath = "$ROOT_PREFIX/DesarrollosGenerales/$idDesarrollo";
+  $snapDes = $database->getReference($desPath)->getSnapshot();
+  if (!$snapDes->exists()) {
+    echo json_encode(['ok'=>false,'error'=>'desarrollo no encontrado']); exit;
+  }
+
+  // 2) Lotes del desarrollo
+  $lotPath = "$desPath/Lotes";
+  $snapLot = $database->getReference($lotPath)->getSnapshot();
+  $lotes = $snapLot->getValue() ?: [];
 
   $items = [];
 
-  foreach ($rows as $rid => $row) {
+  foreach ($lotes as $idLote => $row) {
     if (!is_array($row)) continue;
 
-    // Filtrado por desarrollo (acepta idDesarrollo o IdDesarrollo)
-    $idDesRow = (string)($row['idDesarrollo'] ?? $row['IdDesarrollo'] ?? '');
-    if ($idDesRow !== '' && $idDesRow !== $id) continue;
+    $status = (string)($row['Estatus'] ?? $row['estatus'] ?? '');
+    if (mb_strtoupper(trim($status)) === 'DISPONIBLE') continue;
 
-    // Campos base (legacy)
-    $cliente    = (string)($row['NombreCliente']   ?? '');
-    $loteLbl    = (string)($row['NombreLote']      ?? '');
-    $fecha      = (string)($row['FechaVenta']      ?? '');
-    $tipo       = (string)($row['TipoVenta']       ?? '');
-    $contrato   = (string)($row['NumeroContrato']  ?? '');
-    // Total de la venta: intenta Total, luego PrecioLote
-    $total      = (float)  ($row['Total'] ?? $row['PrecioLote'] ?? 0);
+    $cliente    = (string)($row['NombreCliente'] ?? $row['Cliente'] ?? '');
+    $loteLbl    = (string)($row['NombreLote'] ?? $row['Lote'] ?? $idLote);
+    $precio     = normalize_money($row['Precio'] ?? $row['Costo'] ?? 0);
+    $fechaVenta = to_dmY($row['FechaVenta'] ?? '');
+    $tipoVenta  = (string)($row['TipoVenta'] ?? '');
 
-    // === 2) Sumar pagos registrados
-    $pagosPath  = "$ROOT_PREFIX/PagosRealizados/$rid";
-    $pagosSnap  = $database->getReference($pagosPath)->getSnapshot();
-    $pagado     = 0.0;
-
-    if ($pagosSnap->exists()) {
-      $pagos = $pagosSnap->getValue() ?: [];
-      foreach ($pagos as $pid => $p) {
-        // solo suma pagos confirmados si manejas estatus
-        $estatusPago = strtoupper((string)($p['Estatus'] ?? $p['estatus'] ?? 'CONFIRMADO'));
-        $monto       = (float)($p['Total'] ?? $p['total'] ?? 0);
-        if ($monto > 0 && $estatusPago !== 'RECHAZADO' && $estatusPago !== 'ANULADO') {
-          $pagado += $monto;
-        }
-      }
-    } else {
-      // Si no existe nodo de pagos, intenta algún total previo guardado
-      $pagado = (float)($row['TotalPagado'] ?? 0);
-    }
-
-    // === 3) Estado derivado
-    $estadoActual = (string)($row['Estatus'] ?? $row['Estado'] ?? '');
-    $estadoCalc   = ($total > 0 && $pagado + 0.0001 >= $total) ? 'LIQUIDADO' : 'PENDIENTE';
-    $estadoFinal  = $estadoActual !== '' ? $estadoActual : $estadoCalc;
-
-    // (opcional) Persistir TotalPagado + Estatus para que el visor/ojito lo vea actualizado
-    try {
-      $database->getReference("$ventasPath/$rid")->update([
-        'TotalPagado' => $pagado,
-        'Estatus'     => $estadoFinal,
-      ]);
-    } catch (\Throwable $e) {
-      // silencioso
-    }
-
-    // === 4) Armar item compatible con la UI nueva
     $items[] = [
-      'id'           => $rid,
-      'cliente'      => $cliente,
-      'lote'         => $loteLbl,
-      // (si en el futuro migras a múltiples lotes, aquí puedes llenar 'lotes' como arreglo)
-      'fecha'        => $fecha,
-      'tipo'         => $tipo,
-      'total'        => $total,
-      'totalPagado'  => $pagado,
-      'estado'       => $estadoFinal,   // usado por la UI nueva
-      'estatus'      => $estadoFinal,   // compatibilidad con legacy
-      'contrato'     => $contrato,
-      'clienteId'    => (string)($row['IdCliente'] ?? $row['idCliente'] ?? ''),
+      'id'         => (string)$idLote,   // mismo que idLote
+      'idLote'     => (string)$idLote,
+      'idDesarrollo' => (string)$idDesarrollo, // 👈 guardamos también el desarrollo
+      'cliente'    => $cliente,
+      'lote'       => $loteLbl,
+      'precio'     => $precio,
+      'fechaVenta' => $fechaVenta,
+      'tipoVenta'  => $tipoVenta,
+      'status'     => $status,
     ];
   }
 
-  // === 5) Ordenar por fecha (DD/MM/YYYY) descendente
+  // 3) Ordenar por fecha descendente
   usort($items, function($a,$b){
-    $pa = DateTime::createFromFormat('d/m/Y', (string)$a['fecha']) ?: new DateTime('1970-01-01');
-    $pb = DateTime::createFromFormat('d/m/Y', (string)$b['fecha']) ?: new DateTime('1970-01-01');
+    $pa = DateTime::createFromFormat('d/m/Y', (string)$a['fechaVenta']) ?: new DateTime('1970-01-01');
+    $pb = DateTime::createFromFormat('d/m/Y', (string)$b['fechaVenta']) ?: new DateTime('1970-01-01');
     return $pb <=> $pa;
   });
 
   echo json_encode(['ok'=>true, 'items'=>$items], JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
+
 } catch(Throwable $e){
   http_response_code(500);
   echo json_encode(['ok'=>false, 'error'=>$e->getMessage()], JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
